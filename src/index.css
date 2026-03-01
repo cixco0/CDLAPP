@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #121212;
+  color: #FFFFFF;
+}
+
+/* Scrollable container */
+.screen-scroll {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;
+}
+
+/* Touch-friendly inputs */
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: 16px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+}
+
+/* Prevent zoom on iOS */
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Detention bar pulse animation */
+@keyframes detention-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.detention-bar {
+  animation: detention-pulse 2s ease-in-out infinite;
+}
+
+/* Status pill colors */
+.status-assigned { background-color: #3B82F6; color: white; }
+.status-accepted { background-color: #6366F1; color: white; }
+.status-en-route { background-color: #8B5CF6; color: white; }
+.status-at-terminal { background-color: #F59E0B; color: black; }
+.status-loaded { background-color: #10B981; color: white; }
+.status-in-transit { background-color: #06B6D4; color: white; }
+.status-at-delivery { background-color: #F59E0B; color: black; }
+.status-unloading { background-color: #F97316; color: white; }
+.status-delivered { background-color: #22C55E; color: white; }
+.status-empty-return { background-color: #64748B; color: white; }
+.status-completed { background-color: #166534; color: white; }
+.status-pending { background-color: #3B82F6; color: white; }
+.status-in-progress { background-color: #F59E0B; color: black; }
+
+/* Swipe gesture hint */
+.swipe-hint {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-hint::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 50%;
+  transition: right 0.3s;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Signature canvas */
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Photo grid */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* Hide scrollbar but keep scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area padding for bottom nav */
+.pb-safe {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #1E1E1E 25%, #2A2A2A 50%, #1E1E1E 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
