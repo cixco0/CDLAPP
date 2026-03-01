@@ -9,6 +9,7 @@ import InspectScreen from './screens/Inspect/InspectScreen';
 import TractorInspection from './screens/Inspect/TractorInspection';
 import ChassisInspection from './screens/Inspect/ChassisInspection';
 import ContainerInspection from './screens/Inspect/ContainerInspection';
+import InspectionDetailScreen from './screens/Inspect/InspectionDetailScreen';
 import MoreScreen from './screens/More/MoreScreen';
 import ProfileSettings from './screens/More/ProfileSettings';
 import TerminalsManager from './screens/More/TerminalsManager';
@@ -33,6 +34,7 @@ export default function App() {
                 <Route path="/inspect/tractor" element={<TractorInspection />} />
                 <Route path="/inspect/chassis" element={<ChassisInspection />} />
                 <Route path="/inspect/container" element={<ContainerInspection />} />
+                <Route path="/inspect/detail/:id" element={<InspectionDetailScreen />} />
                 <Route path="/more" element={<MoreScreen />} />
                 <Route path="/more/profile" element={<ProfileSettings />} />
                 <Route path="/more/terminals" element={<TerminalsManager />} />

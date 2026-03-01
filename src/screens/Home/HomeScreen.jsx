@@ -310,7 +310,7 @@ export default function HomeScreen() {
                         return (
                             <div key={insp.id}>
                                 {idx > 0 && <div className="ios-separator" />}
-                                <div className="ios-row">
+                                <div className="ios-row press-effect cursor-pointer" onClick={() => navigate(`/inspect/detail/${insp.id}`)}>
                                     <div className={`ios-row-icon ${insp.rejected ? 'bg-accent-red' : defects > 0 ? 'bg-accent-yellow' : 'bg-accent-green'} text-white`}>
                                         {typeIcon}
                                     </div>
@@ -320,7 +320,7 @@ export default function HomeScreen() {
                                             {inspDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {inspDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="flex items-center gap-2">
                                         {insp.rejected ? (
                                             <span className="text-accent-red text-ios-caption1 font-bold">Rejected</span>
                                         ) : defects > 0 ? (
@@ -328,6 +328,7 @@ export default function HomeScreen() {
                                         ) : (
                                             <span className="text-accent-green text-ios-caption1 font-bold">Pass</span>
                                         )}
+                                        <span className="text-text-tertiary text-lg">›</span>
                                     </div>
                                 </div>
                             </div>
