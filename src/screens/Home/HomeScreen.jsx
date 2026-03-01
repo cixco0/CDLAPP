@@ -21,6 +21,7 @@ export default function HomeScreen() {
     const [hasPreTrip, setHasPreTrip] = useState(true);
     const [detention, setDetention] = useState(null);
     const [recentInspections, setRecentInspections] = useState([]);
+    const [recentShifts, setRecentShifts] = useState([]);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
@@ -51,6 +52,22 @@ export default function HomeScreen() {
         const allInsp = await getAllInspections();
         const sorted = allInsp.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
         setRecentInspections(sorted);
+
+        // Build recent shifts from all time entries
+        const allEntries = await import('../../db/db').then(m => m.default.timeEntries.toArray());
+        const byDate = {};
+        allEntries.forEach(e => {
+            if (!byDate[e.date]) byDate[e.date] = [];
+            byDate[e.date].push(e);
+        });
+        const shiftDays = Object.keys(byDate).sort().reverse().slice(0, 7).map(date => {
+            const entries = byDate[date].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+            const firstIn = entries.find(e => e.type === 'clock-in');
+            const lastOut = [...entries].reverse().find(e => e.type === 'clock-out');
+            const hours = calculateDailyHours(entries);
+            return { date, entries, firstIn, lastOut, hours };
+        });
+        setRecentShifts(shiftDays);
     }
 
     const clockedIn = isClockedIn(todayEntries);
@@ -330,6 +347,37 @@ export default function HomeScreen() {
                                         )}
                                         <span className="text-text-tertiary text-lg">›</span>
                                     </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Recent Shifts */}
+            {recentShifts.length > 0 && (
+                <div className="ios-card mb-6">
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                        <h2 className="text-ios-headline">Recent Shifts</h2>
+                    </div>
+                    {recentShifts.map((shift, idx) => {
+                        const d = new Date(shift.date + 'T12:00:00');
+                        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                        const hrs = Math.floor(shift.hours / (1000 * 60 * 60));
+                        const mins = Math.floor((shift.hours % (1000 * 60 * 60)) / (1000 * 60));
+                        const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+                        const firstInTime = shift.firstIn ? new Date(shift.firstIn.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '—';
+                        const lastOutTime = shift.lastOut ? new Date(shift.lastOut.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Active';
+                        return (
+                            <div key={shift.date}>
+                                {idx > 0 && <div className="ios-separator" />}
+                                <div className="ios-row">
+                                    <div className="ios-row-icon bg-accent-blue text-white">⏱️</div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-ios-body">{dayLabel}</p>
+                                        <p className="text-text-tertiary text-ios-caption1">{firstInTime} → {lastOutTime}</p>
+                                    </div>
+                                    <span className={`font-bold text-ios-footnote ${hrs >= 8 ? 'text-accent-green' : 'text-text-secondary'}`}>{timeStr}</span>
                                 </div>
                             </div>
                         );
