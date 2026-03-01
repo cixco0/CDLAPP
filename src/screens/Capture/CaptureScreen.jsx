@@ -33,6 +33,7 @@ export default function CaptureScreen() {
     const [ocrScanning, setOcrScanning] = useState(false);
     const [ocrDone, setOcrDone] = useState(false);
     const [ocrText, setOcrText] = useState('');
+    const [ocrData, setOcrData] = useState(null);
 
     useEffect(() => { loadData(); }, []);
 
@@ -70,7 +71,8 @@ export default function CaptureScreen() {
         try {
             const d = await extractReceiptData(imageData, (p) => setOcrProgress(p));
             setOcrText(d.rawText);
-            // Only auto-fill the 3 most reliable fields
+            setOcrData(d); // Store full OCR result
+            // Only auto-fill the 3 most reliable fields for editing
             if (d.amount > 0) setReceiptAmount(d.amount.toFixed(2));
             if (d.vendor) setReceiptVendor(d.vendor);
             if (d.category && RECEIPT_CATEGORIES.includes(d.category)) setReceiptCategory(d.category);
@@ -98,6 +100,17 @@ export default function CaptureScreen() {
             loadId: receiptLoadId || null,
             vendor: receiptVendor,
             paymentMethod: receiptPayment,
+            // Pass all OCR-extracted data
+            gallons: ocrData?.gallons || 0,
+            pricePerGallon: ocrData?.pricePerGallon || 0,
+            fuelGrade: ocrData?.fuelGrade || '',
+            invoiceNumber: ocrData?.invoiceNumber || '',
+            subtotal: ocrData?.subtotal || 0,
+            tax: ocrData?.tax || 0,
+            cardLastFour: ocrData?.cardLastFour || '',
+            address: ocrData?.address || '',
+            receiptDate: ocrData?.date || '',
+            lineItems: ocrData?.allLineItems || [],
         });
         resetForm();
         await loadData();
@@ -108,7 +121,7 @@ export default function CaptureScreen() {
         setPhotoType('General'); setPhotoLoadId(''); setPhotoNotes('');
         setReceiptCategory('Fuel'); setReceiptAmount(''); setReceiptLoadId('');
         setReceiptVendor(''); setReceiptPayment('Card');
-        setOcrScanning(false); setOcrProgress(0); setOcrDone(false); setOcrText('');
+        setOcrScanning(false); setOcrProgress(0); setOcrDone(false); setOcrText(''); setOcrData(null);
     }
 
     async function handleDeletePhoto(id) {
