@@ -216,12 +216,9 @@ export default function LoadDetailScreen() {
 
             {/* Photo Viewer Modal */}
             {viewingPhoto && (
-                <div
-                    className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in"
-                    onClick={() => setViewingPhoto(null)}
-                >
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-black/80">
+                <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
+                    {/* Header - fixed at top */}
+                    <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/90 backdrop-blur-sm">
                         <button
                             onClick={() => setViewingPhoto(null)}
                             className="text-accent-blue text-ios-body font-medium press-effect"
@@ -232,26 +229,30 @@ export default function LoadDetailScreen() {
                         <div className="w-12" />
                     </div>
 
-                    {/* Photo */}
-                    <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+                    {/* Scrollable Photo Area - scroll to see full image */}
+                    <div className="flex-1 overflow-auto overscroll-contain">
                         <img
                             src={viewingPhoto.data}
                             alt={viewingPhoto.type}
-                            className="max-w-full max-h-full object-contain rounded-ios"
+                            className="w-full h-auto"
                         />
                     </div>
 
-                    {/* Info Footer */}
-                    <div className="px-4 py-4 bg-black/80">
-                        <p className="text-white text-ios-body font-medium">{viewingPhoto.type}</p>
-                        {viewingPhoto.createdAt && (
-                            <p className="text-text-tertiary text-ios-caption1 mt-1">
-                                {formatDateTime(viewingPhoto.createdAt)}
-                            </p>
-                        )}
-                        {viewingPhoto.notes && (
-                            <p className="text-text-secondary text-ios-footnote mt-2">{viewingPhoto.notes}</p>
-                        )}
+                    {/* Info Footer - fixed at bottom */}
+                    <div className="shrink-0 px-4 py-3 bg-black/90 backdrop-blur-sm pb-safe">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-white text-ios-footnote font-medium">{viewingPhoto.type}</p>
+                                {viewingPhoto.createdAt && (
+                                    <p className="text-text-tertiary text-ios-caption2">
+                                        {formatDateTime(viewingPhoto.createdAt)}
+                                    </p>
+                                )}
+                            </div>
+                            {viewingPhoto.notes && (
+                                <p className="text-text-secondary text-ios-caption1 text-right max-w-[50%] truncate">{viewingPhoto.notes}</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
