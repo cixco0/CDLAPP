@@ -5,6 +5,7 @@ import { saveReceipt, getAllReceipts } from '../../services/receiptService';
 import { getAllLoads } from '../../services/loadService';
 import { formatTime, formatContainerNumber, getTodayStr } from '../../utils/formatters';
 import { PHOTO_TYPES, RECEIPT_CATEGORIES, PAYMENT_METHODS } from '../../utils/constants';
+import { extractReceiptData } from '../../utils/receiptOCR';
 
 export default function CaptureScreen() {
     const [searchParams] = useSearchParams();
@@ -25,6 +26,13 @@ export default function CaptureScreen() {
     const [receiptLoadId, setReceiptLoadId] = useState('');
     const [receiptVendor, setReceiptVendor] = useState('');
     const [receiptPayment, setReceiptPayment] = useState('Card');
+
+    // OCR state
+    const [ocrProgress, setOcrProgress] = useState(0);
+    const [ocrScanning, setOcrScanning] = useState(false);
+    const [ocrDone, setOcrDone] = useState(false);
+    const [ocrRawText, setOcrRawText] = useState('');
+    const [showRawText, setShowRawText] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -49,8 +57,37 @@ export default function CaptureScreen() {
         const file = e.target.files?.[0];
         if (!file) { setMode(null); return; }
         const reader = new FileReader();
-        reader.onload = (ev) => setCapturedImage(ev.target.result);
+        reader.onload = async (ev) => {
+            const imageData = ev.target.result;
+            setCapturedImage(imageData);
+
+            // Auto-run OCR for receipts
+            if (mode === 'receipt') {
+                runOCR(imageData);
+            }
+        };
         reader.readAsDataURL(file);
+    }
+
+    async function runOCR(imageData) {
+        setOcrScanning(true);
+        setOcrProgress(0);
+        setOcrDone(false);
+        try {
+            const extracted = await extractReceiptData(imageData, (p) => setOcrProgress(p));
+            // Auto-fill the fields
+            if (extracted.amount > 0) setReceiptAmount(extracted.amount.toFixed(2));
+            if (extracted.vendor) setReceiptVendor(extracted.vendor);
+            if (extracted.category && RECEIPT_CATEGORIES.includes(extracted.category)) {
+                setReceiptCategory(extracted.category);
+            }
+            setOcrRawText(extracted.rawText);
+            setOcrDone(true);
+        } catch (err) {
+            console.error('OCR failed:', err);
+            setOcrDone(true);
+        }
+        setOcrScanning(false);
     }
 
     async function handleSavePhoto() {
@@ -90,6 +127,11 @@ export default function CaptureScreen() {
         setReceiptLoadId('');
         setReceiptVendor('');
         setReceiptPayment('Card');
+        setOcrScanning(false);
+        setOcrProgress(0);
+        setOcrDone(false);
+        setOcrRawText('');
+        setShowRawText(false);
     }
 
     async function handleDeletePhoto(id) {
@@ -108,7 +150,6 @@ export default function CaptureScreen() {
         return true;
     });
 
-    const inputClass = "ios-input";
     const labelClass = "block text-text-secondary text-ios-footnote font-medium mb-1.5";
 
     return (
@@ -127,20 +168,20 @@ export default function CaptureScreen() {
                 <div className="ios-sheet-backdrop">
                     <div className="ios-sheet">
                         <div className="ios-sheet-handle" />
-                        <div className="px-4 pb-6">
+                        <div className="px-4 pb-6 max-h-[85vh] overflow-y-auto">
                             <img src={capturedImage} alt="Captured" className="w-full rounded-ios mb-4 max-h-48 object-cover" />
 
                             {mode === 'photo' && (
                                 <div className="space-y-4">
                                     <div>
                                         <label className={labelClass}>Type</label>
-                                        <select value={photoType} onChange={e => setPhotoType(e.target.value)} className={inputClass}>
+                                        <select value={photoType} onChange={e => setPhotoType(e.target.value)} className="ios-input">
                                             {PHOTO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label className={labelClass}>Link to Load</label>
-                                        <select value={photoLoadId} onChange={e => setPhotoLoadId(e.target.value)} className={inputClass}>
+                                        <select value={photoLoadId} onChange={e => setPhotoLoadId(e.target.value)} className="ios-input">
                                             <option value="">Unassigned</option>
                                             {loads.map(l => (
                                                 <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
@@ -149,7 +190,7 @@ export default function CaptureScreen() {
                                     </div>
                                     <div>
                                         <label className={labelClass}>Notes (optional)</label>
-                                        <input type="text" value={photoNotes} onChange={e => setPhotoNotes(e.target.value)} className={inputClass} />
+                                        <input type="text" value={photoNotes} onChange={e => setPhotoNotes(e.target.value)} className="ios-input" />
                                     </div>
                                     <div className="flex gap-3">
                                         <button onClick={resetForm} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold min-h-touch text-ios-body press-effect">Cancel</button>
@@ -160,19 +201,57 @@ export default function CaptureScreen() {
 
                             {mode === 'receipt' && (
                                 <div className="space-y-4">
+                                    {/* OCR Progress */}
+                                    {ocrScanning && (
+                                        <div className="ios-card p-4">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-5 h-5 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-ios-footnote font-semibold text-accent-blue">Scanning receipt...</span>
+                                            </div>
+                                            <div className="w-full bg-ios-elevated rounded-full h-2">
+                                                <div className="bg-accent-blue rounded-full h-2 transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+                                            </div>
+                                            <p className="text-text-tertiary text-ios-caption1 mt-1">{ocrProgress}% — extracting text</p>
+                                        </div>
+                                    )}
+
+                                    {/* OCR Success Banner */}
+                                    {ocrDone && !ocrScanning && (
+                                        <div className="bg-accent-green-dim rounded-ios p-3 flex items-center gap-2">
+                                            <span className="text-accent-green text-lg">✅</span>
+                                            <div className="flex-1">
+                                                <p className="text-accent-green text-ios-footnote font-semibold">Receipt scanned</p>
+                                                <p className="text-text-tertiary text-ios-caption2">Fields auto-filled — please verify below</p>
+                                            </div>
+                                            <button onClick={() => setShowRawText(!showRawText)} className="text-accent-blue text-ios-caption1 font-medium press-effect">
+                                                {showRawText ? 'Hide' : 'Raw'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Raw OCR text (toggle) */}
+                                    {showRawText && ocrRawText && (
+                                        <div className="bg-ios-elevated rounded-ios p-3 max-h-32 overflow-y-auto">
+                                            <p className="text-text-tertiary text-ios-caption2 font-mono whitespace-pre-wrap">{ocrRawText}</p>
+                                        </div>
+                                    )}
+
                                     <div>
                                         <label className={labelClass}>Category</label>
-                                        <select value={receiptCategory} onChange={e => setReceiptCategory(e.target.value)} className={inputClass}>
+                                        <select value={receiptCategory} onChange={e => setReceiptCategory(e.target.value)} className="ios-input">
                                             {RECEIPT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className={labelClass}>Amount ($)</label>
-                                        <input type="number" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className={inputClass} />
+                                        <label className={labelClass}>
+                                            Amount ($)
+                                            {ocrDone && receiptAmount && <span className="text-accent-green ml-2">← auto-detected</span>}
+                                        </label>
+                                        <input type="number" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="ios-input" />
                                     </div>
                                     <div>
                                         <label className={labelClass}>Link to Load</label>
-                                        <select value={receiptLoadId} onChange={e => setReceiptLoadId(e.target.value)} className={inputClass}>
+                                        <select value={receiptLoadId} onChange={e => setReceiptLoadId(e.target.value)} className="ios-input">
                                             <option value="">General / No Specific Load</option>
                                             {loads.map(l => (
                                                 <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
@@ -180,19 +259,27 @@ export default function CaptureScreen() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className={labelClass}>Vendor (optional)</label>
-                                        <input type="text" value={receiptVendor} onChange={e => setReceiptVendor(e.target.value)} className={inputClass} />
+                                        <label className={labelClass}>
+                                            Vendor
+                                            {ocrDone && receiptVendor && <span className="text-accent-green ml-2">← auto-detected</span>}
+                                        </label>
+                                        <input type="text" value={receiptVendor} onChange={e => setReceiptVendor(e.target.value)} className="ios-input" />
                                     </div>
                                     <div>
                                         <label className={labelClass}>Payment Method</label>
-                                        <select value={receiptPayment} onChange={e => setReceiptPayment(e.target.value)} className={inputClass}>
+                                        <select value={receiptPayment} onChange={e => setReceiptPayment(e.target.value)} className="ios-input">
                                             {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                                         </select>
                                     </div>
-                                    <p className="text-text-tertiary text-ios-caption1 text-center">Is the total readable? Enter amount manually above.</p>
                                     <div className="flex gap-3">
                                         <button onClick={resetForm} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold min-h-touch text-ios-body press-effect">Cancel</button>
-                                        <button onClick={handleSaveReceipt} className="flex-1 bg-accent-blue text-white py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect">Save Receipt</button>
+                                        <button
+                                            onClick={handleSaveReceipt}
+                                            disabled={ocrScanning}
+                                            className={`flex-1 py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect ${ocrScanning ? 'bg-ios-elevated text-text-tertiary' : 'bg-accent-blue text-white'}`}
+                                        >
+                                            {ocrScanning ? 'Scanning...' : 'Save Receipt'}
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -227,7 +314,10 @@ export default function CaptureScreen() {
                             <line x1="8" y1="13" x2="16" y2="13" />
                             <line x1="8" y1="17" x2="13" y2="17" />
                         </svg>
-                        <span className="font-bold text-ios-body text-black/80">Scan Receipt</span>
+                        <div className="text-center">
+                            <span className="font-bold text-ios-body text-black/80 block">Scan Receipt</span>
+                            <span className="text-[10px] text-black/50 font-medium">Auto-reads text</span>
+                        </div>
                     </button>
                 </div>
 
@@ -261,6 +351,9 @@ export default function CaptureScreen() {
                                         }`}>
                                         {c.captureType === 'receipt' ? c.category : c.type}
                                     </span>
+                                    {c.captureType === 'receipt' && c.amount > 0 && (
+                                        <span className="text-[10px] ml-1 font-bold text-white">${Number(c.amount).toFixed(2)}</span>
+                                    )}
                                     <p className="text-[10px] text-text-secondary mt-0.5">{formatTime(c.createdAt)}</p>
                                 </div>
                             </div>
