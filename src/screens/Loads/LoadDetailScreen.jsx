@@ -129,70 +129,84 @@ export default function LoadDetailScreen() {
                             {formatContainerNumber(load.containerNumber) || 'Load Detail'}
                         </h1>
                     </div>
-                    <button
-                        onClick={() => setShowStatusPicker(!showStatusPicker)}
-                        className={`px-3 py-1.5 rounded-full text-ios-caption1 font-bold status-${load.status.toLowerCase().replace(/\s+/g, '-')} press-effect`}
-                    >
-                        {load.status} ▾
-                    </button>
                 </div>
 
-                {/* Status Timeline */}
-                <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                    <div className="flex items-center gap-0 min-w-max py-2">
-                        {LOAD_STATUSES.map((s, i) => {
-                            const isCompleted = i < currentIdx;
-                            const isCurrent = i === currentIdx;
-                            return (
-                                <div key={s} className="flex items-center">
-                                    {i > 0 && (
-                                        <div className={`w-4 h-0.5 ${isCompleted ? 'bg-accent-blue' : 'bg-ios-separator'}`} />
-                                    )}
-                                    <div
-                                        className={`w-3 h-3 rounded-full shrink-0 ${isCurrent ? 'bg-accent-blue ring-2 ring-accent-blue/30' :
-                                            isCompleted ? 'bg-accent-blue' : 'bg-ios-separator'
-                                            }`}
-                                        title={s}
-                                    />
-                                </div>
-                            );
-                        })}
+                {/* Status Progress Bar - Tap to change */}
+                <button
+                    onClick={() => setShowStatusPicker(true)}
+                    className="w-full pt-2 press-effect text-left"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-ios-separator rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-accent-blue rounded-full transition-all duration-300"
+                                style={{ width: `${((currentIdx + 1) / LOAD_STATUSES.length) * 100}%` }}
+                            />
+                        </div>
+                        <span className="text-text-tertiary text-ios-caption1 shrink-0">
+                            {currentIdx + 1}/{LOAD_STATUSES.length}
+                        </span>
                     </div>
-                    <div className="flex items-center gap-0 min-w-max">
-                        {LOAD_STATUSES.map((s, i) => {
-                            const isCurrent = i === currentIdx;
-                            return (
-                                <div key={s} className="flex items-center">
-                                    {i > 0 && <div className="w-4" />}
-                                    <span className={`text-[8px] whitespace-nowrap ${isCurrent ? 'text-accent-blue font-bold' : 'text-text-tertiary'}`}>
-                                        {s.replace('En Route to ', '').substring(0, 8)}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                    <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-accent-blue text-ios-body font-semibold">{load.status}</p>
+                        <span className="text-text-tertiary text-ios-caption1">Tap to update ›</span>
                     </div>
-                </div>
+                </button>
             </div>
 
             {/* Status Picker — iOS Bottom Sheet */}
             {showStatusPicker && (
-                <div className="ios-sheet-backdrop" onClick={() => setShowStatusPicker(false)}>
-                    <div className="ios-sheet" onClick={e => e.stopPropagation()}>
-                        <div className="ios-sheet-handle" />
-                        <div className="px-4 pb-6">
-                            <h3 className="text-ios-title3 font-bold mb-4">Change Status</h3>
-                            {LOAD_STATUSES.map((s, i) => (
+                <div
+                    className="fixed inset-0 bg-black/60 z-50 flex items-end animate-fade-in"
+                    onClick={() => setShowStatusPicker(false)}
+                >
+                    <div
+                        className="bg-ios-card w-full rounded-t-2xl max-h-[80vh] overflow-hidden animate-slide-up"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="w-9 h-1 bg-text-tertiary/50 rounded-full mx-auto mt-3" />
+                        <div className="px-4 pt-4 pb-safe">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-ios-title3 font-bold">Update Status</h3>
                                 <button
-                                    key={s}
-                                    onClick={() => handleStatusAdvance(s)}
-                                    className={`w-full text-left py-3 px-4 rounded-ios mb-2 min-h-touch press-effect text-ios-body ${s === load.status
-                                        ? 'bg-accent-blue-dim text-accent-blue font-bold'
-                                        : 'bg-ios-elevated text-white'
-                                        }`}
+                                    onClick={() => setShowStatusPicker(false)}
+                                    className="text-accent-blue text-ios-body font-medium press-effect"
                                 >
-                                    {i < currentIdx ? '✓ ' : ''}{s}
+                                    Done
                                 </button>
-                            ))}
+                            </div>
+                            <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pb-4">
+                                {LOAD_STATUSES.map((s, i) => {
+                                    const isCompleted = i < currentIdx;
+                                    const isCurrent = s === load.status;
+                                    return (
+                                        <button
+                                            key={s}
+                                            onClick={() => handleStatusAdvance(s)}
+                                            className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all press-effect ${
+                                                isCurrent
+                                                    ? 'bg-accent-blue text-white'
+                                                    : isCompleted
+                                                    ? 'bg-ios-elevated/50 text-text-secondary'
+                                                    : 'bg-ios-elevated text-white'
+                                            }`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                                isCurrent
+                                                    ? 'bg-white text-accent-blue'
+                                                    : isCompleted
+                                                    ? 'bg-accent-green text-white'
+                                                    : 'bg-ios-separator text-text-tertiary'
+                                            }`}>
+                                                {isCompleted ? '✓' : i + 1}
+                                            </div>
+                                            <span className={`text-ios-body ${isCurrent ? 'font-bold' : ''}`}>
+                                                {s}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
