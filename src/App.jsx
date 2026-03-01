@@ -6,6 +6,7 @@ import LoadsScreen from './screens/Loads/LoadsScreen';
 import AddLoadScreen from './screens/Loads/AddLoadScreen';
 import LoadDetailScreen from './screens/Loads/LoadDetailScreen';
 import CaptureScreen from './screens/Capture/CaptureScreen';
+import ReceiptDetailScreen from './screens/Capture/ReceiptDetailScreen';
 import InspectScreen from './screens/Inspect/InspectScreen';
 import TractorInspection from './screens/Inspect/TractorInspection';
 import ChassisInspection from './screens/Inspect/ChassisInspection';
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/loads/new" element={<AddLoadScreen />} />
                 <Route path="/loads/:id" element={<LoadDetailScreen />} />
                 <Route path="/capture" element={<CaptureScreen />} />
+                <Route path="/receipt/:id" element={<ReceiptDetailScreen />} />
                 <Route path="/inspect" element={<InspectScreen />} />
                 <Route path="/inspect/tractor" element={<TractorInspection />} />
                 <Route path="/inspect/chassis" element={<ChassisInspection />} />

@@ -1,23 +1,37 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createInspection } from '../../services/inspectionService';
+import { getAllSettings } from '../../services/settingsService';
 import { CONTAINER_INSPECTION_POSITIONS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/formatters';
 
 export default function ContainerInspection() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const canvasRef = useRef(null);
+    const [settings, setSettings] = useState({});
     const [containerNumber, setContainerNumber] = useState('');
     const [sealNumber, setSealNumber] = useState('');
-    const [currentPosition, setCurrentPosition] = useState(0);
     const [positions, setPositions] = useState(
         CONTAINER_INSPECTION_POSITIONS.map((p) => ({
             ...p, photo: null, condition: 'good', description: '',
         }))
     );
     const [overallCondition, setOverallCondition] = useState('');
+    const [confirmed, setConfirmed] = useState(false);
+    const [signature, setSignature] = useState('');
+    const [isDrawing, setIsDrawing] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [activeCapture, setActiveCapture] = useState(null);
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    async function loadSettings() {
+        const s = await getAllSettings();
+        setSettings(s);
+    }
 
     function handleCapture(posIdx) {
         setActiveCapture(posIdx);
@@ -45,15 +59,68 @@ export default function ContainerInspection() {
         setPositions(prev => prev.map((p, i) => i === idx ? { ...p, description } : p));
     }
 
+    const startDraw = useCallback((e) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        setIsDrawing(true);
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }, []);
+
+    const draw = useCallback((e) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        e.preventDefault();
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#007AFF';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }, [isDrawing]);
+
+    const endDraw = useCallback(() => {
+        setIsDrawing(false);
+        const canvas = canvasRef.current;
+        if (canvas) {
+            setSignature(canvas.toDataURL());
+        }
+    }, []);
+
+    function clearSignature() {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            setSignature('');
+        }
+    }
+
     async function handleSubmit() {
         if (!overallCondition) { alert('Please select overall condition.'); return; }
+        if (!confirmed) { alert('Please confirm all positions have been inspected.'); return; }
+        if (!signature) { alert('Please provide your signature.'); return; }
+
         await createInspection({
-            type: 'container', containerNumber,
+            type: 'container',
+            containerNumber,
+            sealNumber,
             items: positions.map(({ id, label, photo, condition, description }) => ({
                 id, label, hasPhoto: !!photo, condition, description,
             })),
             photos: positions.filter(p => p.photo).map(p => p.photo),
             overallCondition,
+            signature,
+            driverName: settings.driverName || '',
+            confirmed: true,
         });
         setSubmitted(true);
     }
@@ -168,6 +235,43 @@ export default function ContainerInspection() {
                             </button>
                         ))}
                     </div>
+                </div>
+
+                {/* Confirmation */}
+                <div className="ios-card p-4 mb-4">
+                    <label className="flex items-center gap-3 min-h-touch">
+                        <input
+                            type="checkbox"
+                            checked={confirmed}
+                            onChange={(e) => setConfirmed(e.target.checked)}
+                            className="w-6 h-6 rounded accent-[#007AFF]"
+                        />
+                        <span className="text-ios-footnote font-medium">All positions above have been inspected</span>
+                    </label>
+                </div>
+
+                {/* Signature */}
+                <div className="ios-card p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-ios-footnote font-semibold text-text-secondary">Digital Signature</p>
+                        <button onClick={clearSignature} className="text-accent-red text-ios-caption1 font-medium press-effect">Clear</button>
+                    </div>
+                    <canvas
+                        ref={canvasRef}
+                        width={300}
+                        height={120}
+                        className="w-full bg-ios-input rounded-ios border border-ios-separator signature-canvas"
+                        onMouseDown={startDraw}
+                        onMouseMove={draw}
+                        onMouseUp={endDraw}
+                        onMouseLeave={endDraw}
+                        onTouchStart={startDraw}
+                        onTouchMove={draw}
+                        onTouchEnd={endDraw}
+                    />
+                    <p className="text-text-tertiary text-ios-caption1 mt-1">
+                        {settings.driverName || 'Driver'} • {formatDateTime(new Date())}
+                    </p>
                 </div>
 
                 <button onClick={handleSubmit} className="w-full bg-accent-blue text-white py-4 rounded-ios font-bold text-ios-body min-h-touch-lg mb-8 press-effect">
