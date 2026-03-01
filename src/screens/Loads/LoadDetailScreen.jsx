@@ -22,6 +22,7 @@ export default function LoadDetailScreen() {
     const [newNote, setNewNote] = useState('');
     const [photoType, setPhotoType] = useState('General');
     const [showStatusPicker, setShowStatusPicker] = useState(false);
+    const [viewingPhoto, setViewingPhoto] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -213,6 +214,48 @@ export default function LoadDetailScreen() {
                 </div>
             )}
 
+            {/* Photo Viewer Modal */}
+            {viewingPhoto && (
+                <div
+                    className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in"
+                    onClick={() => setViewingPhoto(null)}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-black/80">
+                        <button
+                            onClick={() => setViewingPhoto(null)}
+                            className="text-accent-blue text-ios-body font-medium press-effect"
+                        >
+                            Done
+                        </button>
+                        <p className="text-white text-ios-headline font-semibold">{viewingPhoto.type}</p>
+                        <div className="w-12" />
+                    </div>
+
+                    {/* Photo */}
+                    <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+                        <img
+                            src={viewingPhoto.data}
+                            alt={viewingPhoto.type}
+                            className="max-w-full max-h-full object-contain rounded-ios"
+                        />
+                    </div>
+
+                    {/* Info Footer */}
+                    <div className="px-4 py-4 bg-black/80">
+                        <p className="text-white text-ios-body font-medium">{viewingPhoto.type}</p>
+                        {viewingPhoto.createdAt && (
+                            <p className="text-text-tertiary text-ios-caption1 mt-1">
+                                {formatDateTime(viewingPhoto.createdAt)}
+                            </p>
+                        )}
+                        {viewingPhoto.notes && (
+                            <p className="text-text-secondary text-ios-footnote mt-2">{viewingPhoto.notes}</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="px-4 pt-4 space-y-4">
                 {/* Info Section */}
                 <div className="ios-card p-4">
@@ -267,7 +310,11 @@ export default function LoadDetailScreen() {
                     {photos.length > 0 && (
                         <div className="photo-grid mb-3">
                             {photos.map((p) => (
-                                <div key={p.id} className="relative aspect-square overflow-hidden bg-ios-elevated">
+                                <div
+                                    key={p.id}
+                                    className="relative aspect-square overflow-hidden bg-ios-elevated cursor-pointer press-effect"
+                                    onClick={() => setViewingPhoto(p)}
+                                >
                                     <img src={p.data} alt="" className="w-full h-full object-cover" />
                                     <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] text-center py-0.5 truncate px-1">
                                         {p.type}
