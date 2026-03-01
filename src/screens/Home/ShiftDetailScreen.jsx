@@ -186,13 +186,16 @@ export default function ShiftDetailScreen() {
                             {receipts.map((r, idx) => (
                                 <div key={r.id}>
                                     {idx > 0 && <div className="ios-separator" />}
-                                    <div className="px-4 py-3 flex items-center gap-3">
+                                    <div className="ios-row press-effect cursor-pointer" onClick={() => navigate(`/receipt/${r.id}`)}>
                                         <div className="ios-row-icon bg-accent-green text-white">🧾</div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-ios-body">{r.category || 'Receipt'}</p>
                                             <p className="text-text-tertiary text-ios-caption1">{r.vendor || '—'}</p>
                                         </div>
-                                        <span className="font-bold text-ios-footnote">{formatCurrency(r.amount || 0)}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-ios-footnote">{formatCurrency(r.amount || 0)}</span>
+                                            <span className="text-text-tertiary text-lg">›</span>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

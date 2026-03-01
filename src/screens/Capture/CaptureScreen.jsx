@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { savePhoto, getTodayPhotos, deletePhoto } from '../../services/photoService';
 import { saveReceipt, getAllReceipts } from '../../services/receiptService';
 import { getAllLoads } from '../../services/loadService';
@@ -9,6 +9,7 @@ import { extractReceiptData } from '../../utils/receiptOCR';
 
 export default function CaptureScreen() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const fileInputRef = useRef(null);
     const [mode, setMode] = useState(searchParams.get('mode') || null);
     const [todayPhotos, setTodayPhotos] = useState([]);
@@ -284,7 +285,11 @@ export default function CaptureScreen() {
                 {filteredCaptures.length > 0 ? (
                     <div className="photo-grid">
                         {filteredCaptures.map((c) => (
-                            <div key={c.id} className="relative aspect-square overflow-hidden bg-ios-card group">
+                            <div
+                                key={c.id}
+                                className="relative aspect-square overflow-hidden bg-ios-card group cursor-pointer press-effect"
+                                onClick={() => c.captureType === 'receipt' && navigate(`/receipt/${c.id}`)}
+                            >
                                 {c.data ? (
                                     <img src={c.data} alt="" className="w-full h-full object-cover" />
                                 ) : (
