@@ -4,7 +4,7 @@ import { getAllSettings, getSetting, setSetting } from '../../services/settingsS
 import { getTodayEntries, isClockedIn, getLastClockIn, calculateDailyHours, getWeekEntries, getEntriesByDate, clockIn, clockOut } from '../../services/timeService';
 import { getLoadsByDate } from '../../services/loadService';
 import { getAllCredentials } from '../../services/credentialService';
-import { hasTodayPreTrip } from '../../services/inspectionService';
+import { hasTodayPreTrip, getAllInspections } from '../../services/inspectionService';
 import { getActiveDetention } from '../../services/detentionService';
 import { formatTime, formatDate, formatDuration, getElapsedTime, daysUntil, expirationColor, getTodayStr } from '../../utils/formatters';
 import { DRIVER_STATUSES, WEEKLY_HOUR_LIMIT } from '../../utils/constants';
@@ -20,6 +20,7 @@ export default function HomeScreen() {
     const [credentials, setCredentials] = useState([]);
     const [hasPreTrip, setHasPreTrip] = useState(true);
     const [detention, setDetention] = useState(null);
+    const [recentInspections, setRecentInspections] = useState([]);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
@@ -47,6 +48,9 @@ export default function HomeScreen() {
         setHasPreTrip(preTrip);
         const det = await getActiveDetention();
         setDetention(det);
+        const allInsp = await getAllInspections();
+        const sorted = allInsp.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
+        setRecentInspections(sorted);
     }
 
     const clockedIn = isClockedIn(todayEntries);
@@ -289,6 +293,48 @@ export default function HomeScreen() {
                     </button>
                 ))}
             </div>
+
+            {/* Recent Inspections */}
+            {recentInspections.length > 0 && (
+                <div className="ios-card mb-6">
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                        <h2 className="text-ios-headline">Recent Inspections</h2>
+                        <button onClick={() => navigate('/more/documents')} className="text-accent-blue text-ios-footnote font-medium press-effect">See All</button>
+                    </div>
+                    {recentInspections.map((insp, idx) => {
+                        const defects = (insp.items || []).filter(i => i.status === 'defect').length;
+                        const typeLabel = insp.type === 'tractor' ? `Tractor ${insp.subType === 'post-trip' ? 'Post-Trip' : 'Pre-Trip'}` :
+                            insp.type === 'chassis' ? 'Chassis' : 'Container';
+                        const typeIcon = insp.type === 'tractor' ? '🚛' : insp.type === 'chassis' ? '🔗' : '📦';
+                        const inspDate = new Date(insp.createdAt);
+                        return (
+                            <div key={insp.id}>
+                                {idx > 0 && <div className="ios-separator" />}
+                                <div className="ios-row">
+                                    <div className={`ios-row-icon ${insp.rejected ? 'bg-accent-red' : defects > 0 ? 'bg-accent-yellow' : 'bg-accent-green'} text-white`}>
+                                        {typeIcon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-ios-body">{typeLabel}</p>
+                                        <p className="text-text-tertiary text-ios-caption1">
+                                            {inspDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {inspDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        {insp.rejected ? (
+                                            <span className="text-accent-red text-ios-caption1 font-bold">Rejected</span>
+                                        ) : defects > 0 ? (
+                                            <span className="text-accent-yellow text-ios-caption1 font-bold">{defects} defect{defects > 1 ? 's' : ''}</span>
+                                        ) : (
+                                            <span className="text-accent-green text-ios-caption1 font-bold">Pass</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }
