@@ -10,7 +10,8 @@ import { LOAD_STATUSES, CHASSIS_PROVIDERS, DOCUMENT_TYPES } from '../../utils/co
 export default function LoadDetailScreen() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const fileInputRef = useRef(null);
+    const cameraInputRef = useRef(null);
+    const galleryInputRef = useRef(null);
     const [load, setLoad] = useState(null);
     const [statusHistory, setStatusHistory] = useState([]);
     const [photos, setPhotos] = useState([]);
@@ -276,28 +277,43 @@ export default function LoadDetailScreen() {
                         </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
                         <select
                             value={photoType}
                             onChange={(e) => setPhotoType(e.target.value)}
-                            className="flex-1 ios-input text-ios-footnote"
+                            className="w-full ios-input text-ios-footnote"
                         >
                             {DOCUMENT_TYPES.map((t) => (
                                 <option key={t.key} value={t.label}>{t.icon} {t.label}</option>
                             ))}
                         </select>
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="bg-accent-blue px-4 py-2 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect"
-                        >
-                            📸 Add
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => cameraInputRef.current?.click()}
+                                className="flex-1 bg-accent-blue py-2.5 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect flex items-center justify-center gap-2"
+                            >
+                                📸 Camera
+                            </button>
+                            <button
+                                onClick={() => galleryInputRef.current?.click()}
+                                className="flex-1 bg-ios-elevated py-2.5 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect flex items-center justify-center gap-2"
+                            >
+                                🖼️ Gallery
+                            </button>
+                        </div>
                     </div>
                     <input
-                        ref={fileInputRef}
+                        ref={cameraInputRef}
                         type="file"
                         accept="image/*"
                         capture="environment"
+                        onChange={handlePhotoCapture}
+                        className="hidden"
+                    />
+                    <input
+                        ref={galleryInputRef}
+                        type="file"
+                        accept="image/*"
                         onChange={handlePhotoCapture}
                         className="hidden"
                     />

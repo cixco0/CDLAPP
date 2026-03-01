@@ -10,7 +10,8 @@ import { extractReceiptData } from '../../utils/receiptOCR';
 export default function CaptureScreen() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const fileInputRef = useRef(null);
+    const cameraInputRef = useRef(null);
+    const galleryInputRef = useRef(null);
     const [mode, setMode] = useState(searchParams.get('mode') || null);
     const [todayPhotos, setTodayPhotos] = useState([]);
     const [todayReceipts, setTodayReceipts] = useState([]);
@@ -47,9 +48,10 @@ export default function CaptureScreen() {
         setLoads(allLoads.filter(l => l.status !== 'Completed'));
     }
 
-    function startCapture(captureMode) {
+    function startCapture(captureMode, source = 'camera') {
         setMode(captureMode);
-        setTimeout(() => fileInputRef.current?.click(), 100);
+        const ref = source === 'gallery' ? galleryInputRef : cameraInputRef;
+        setTimeout(() => ref.current?.click(), 100);
     }
 
     function handleFileChange(e) {
@@ -144,7 +146,8 @@ export default function CaptureScreen() {
 
     return (
         <div className="screen-scroll pb-safe">
-            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+            <input ref={galleryInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
             {/* Full-screen receipt/photo detail */}
             {capturedImage && (
@@ -268,23 +271,33 @@ export default function CaptureScreen() {
             <div className="px-4 pt-6">
                 <h1 className="text-ios-large-title font-bold mb-5">Capture</h1>
 
-                <div className="grid grid-cols-2 gap-3 mb-5">
-                    <button onClick={() => startCapture('photo')} className="bg-accent-blue rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
-                        </svg>
-                        <span className="font-bold text-ios-body text-white">Take Photo</span>
-                    </button>
-                    <button onClick={() => startCapture('receipt')} className="bg-accent-green rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
-                            <line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" />
-                        </svg>
-                        <div className="text-center">
-                            <span className="font-bold text-ios-body text-black/80 block">Scan Receipt</span>
-                            <span className="text-[10px] text-black/50 font-medium">Auto-reads text</span>
-                        </div>
-                    </button>
+                {/* Photo capture options */}
+                <div className="ios-card p-4 mb-3">
+                    <p className="text-ios-footnote font-semibold text-text-secondary mb-3">📸 Photo</p>
+                    <div className="flex gap-2">
+                        <button onClick={() => startCapture('photo', 'camera')} className="flex-1 bg-accent-blue py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
+                            📷 Camera
+                        </button>
+                        <button onClick={() => startCapture('photo', 'gallery')} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
+                            🖼️ Gallery
+                        </button>
+                    </div>
+                </div>
+
+                {/* Receipt capture options */}
+                <div className="ios-card p-4 mb-5">
+                    <div className="flex items-center justify-between mb-3">
+                        <p className="text-ios-footnote font-semibold text-text-secondary">🧾 Receipt</p>
+                        <span className="text-[10px] text-accent-green font-medium">Auto-reads text</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => startCapture('receipt', 'camera')} className="flex-1 bg-accent-green text-black py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
+                            📷 Camera
+                        </button>
+                        <button onClick={() => startCapture('receipt', 'gallery')} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
+                            🖼️ Gallery
+                        </button>
+                    </div>
                 </div>
 
                 <div className="ios-segmented mb-4">
