@@ -27,16 +27,28 @@ export default function CaptureScreen() {
     const [receiptVendor, setReceiptVendor] = useState('');
     const [receiptPayment, setReceiptPayment] = useState('Card');
 
+    // Extra OCR fields
+    const [receiptGallons, setReceiptGallons] = useState('');
+    const [receiptPPG, setReceiptPPG] = useState('');
+    const [receiptFuelGrade, setReceiptFuelGrade] = useState('');
+    const [receiptInvoice, setReceiptInvoice] = useState('');
+    const [receiptSubtotal, setReceiptSubtotal] = useState('');
+    const [receiptTax, setReceiptTax] = useState('');
+    const [receiptCardLast4, setReceiptCardLast4] = useState('');
+    const [receiptAddress, setReceiptAddress] = useState('');
+    const [receiptDate, setReceiptDate] = useState('');
+    const [receiptTime, setReceiptTime] = useState('');
+    const [receiptLineItems, setReceiptLineItems] = useState([]);
+
     // OCR state
     const [ocrProgress, setOcrProgress] = useState(0);
     const [ocrScanning, setOcrScanning] = useState(false);
     const [ocrDone, setOcrDone] = useState(false);
     const [ocrRawText, setOcrRawText] = useState('');
     const [showRawText, setShowRawText] = useState(false);
+    const [showEditFields, setShowEditFields] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     async function loadData() {
         const photos = await getTodayPhotos();
@@ -60,11 +72,7 @@ export default function CaptureScreen() {
         reader.onload = async (ev) => {
             const imageData = ev.target.result;
             setCapturedImage(imageData);
-
-            // Auto-run OCR for receipts
-            if (mode === 'receipt') {
-                runOCR(imageData);
-            }
+            if (mode === 'receipt') runOCR(imageData);
         };
         reader.readAsDataURL(file);
     }
@@ -74,14 +82,22 @@ export default function CaptureScreen() {
         setOcrProgress(0);
         setOcrDone(false);
         try {
-            const extracted = await extractReceiptData(imageData, (p) => setOcrProgress(p));
-            // Auto-fill the fields
-            if (extracted.amount > 0) setReceiptAmount(extracted.amount.toFixed(2));
-            if (extracted.vendor) setReceiptVendor(extracted.vendor);
-            if (extracted.category && RECEIPT_CATEGORIES.includes(extracted.category)) {
-                setReceiptCategory(extracted.category);
-            }
-            setOcrRawText(extracted.rawText);
+            const d = await extractReceiptData(imageData, (p) => setOcrProgress(p));
+            if (d.amount > 0) setReceiptAmount(d.amount.toFixed(2));
+            if (d.vendor) setReceiptVendor(d.vendor);
+            if (d.category && RECEIPT_CATEGORIES.includes(d.category)) setReceiptCategory(d.category);
+            if (d.gallons > 0) setReceiptGallons(d.gallons.toString());
+            if (d.pricePerGallon > 0) setReceiptPPG(d.pricePerGallon.toFixed(3));
+            if (d.fuelGrade) setReceiptFuelGrade(d.fuelGrade);
+            if (d.invoiceNumber) setReceiptInvoice(d.invoiceNumber);
+            if (d.subtotal > 0) setReceiptSubtotal(d.subtotal.toFixed(2));
+            if (d.tax > 0) setReceiptTax(d.tax.toFixed(2));
+            if (d.cardLastFour) setReceiptCardLast4(d.cardLastFour);
+            if (d.address) setReceiptAddress(d.address);
+            if (d.date) setReceiptDate(d.date);
+            if (d.time) setReceiptTime(d.time);
+            if (d.allLineItems?.length > 0) setReceiptLineItems(d.allLineItems);
+            setOcrRawText(d.rawText);
             setOcrDone(true);
         } catch (err) {
             console.error('OCR failed:', err);
@@ -111,6 +127,16 @@ export default function CaptureScreen() {
             loadId: receiptLoadId || null,
             vendor: receiptVendor,
             paymentMethod: receiptPayment,
+            gallons: Number(receiptGallons) || 0,
+            pricePerGallon: Number(receiptPPG) || 0,
+            fuelGrade: receiptFuelGrade,
+            invoiceNumber: receiptInvoice,
+            subtotal: Number(receiptSubtotal) || 0,
+            tax: Number(receiptTax) || 0,
+            cardLastFour: receiptCardLast4,
+            address: receiptAddress,
+            receiptDate: receiptDate,
+            lineItems: receiptLineItems,
         });
         resetForm();
         await loadData();
@@ -119,19 +145,15 @@ export default function CaptureScreen() {
     function resetForm() {
         setCapturedImage(null);
         setMode(null);
-        setPhotoType('General');
-        setPhotoLoadId('');
-        setPhotoNotes('');
-        setReceiptCategory('Fuel');
-        setReceiptAmount('');
-        setReceiptLoadId('');
-        setReceiptVendor('');
-        setReceiptPayment('Card');
-        setOcrScanning(false);
-        setOcrProgress(0);
-        setOcrDone(false);
-        setOcrRawText('');
-        setShowRawText(false);
+        setPhotoType('General'); setPhotoLoadId(''); setPhotoNotes('');
+        setReceiptCategory('Fuel'); setReceiptAmount(''); setReceiptLoadId('');
+        setReceiptVendor(''); setReceiptPayment('Card');
+        setReceiptGallons(''); setReceiptPPG(''); setReceiptFuelGrade('');
+        setReceiptInvoice(''); setReceiptSubtotal(''); setReceiptTax('');
+        setReceiptCardLast4(''); setReceiptAddress(''); setReceiptDate(''); setReceiptTime('');
+        setReceiptLineItems([]);
+        setOcrScanning(false); setOcrProgress(0); setOcrDone(false);
+        setOcrRawText(''); setShowRawText(false); setShowEditFields(false);
     }
 
     async function handleDeletePhoto(id) {
@@ -152,137 +174,260 @@ export default function CaptureScreen() {
 
     const labelClass = "block text-text-secondary text-ios-footnote font-medium mb-1.5";
 
+    // Helper for OCR data row display
+    function DataRow({ icon, label, value, detected }) {
+        if (!value && value !== 0) return null;
+        return (
+            <div className="flex items-center gap-3 py-2.5">
+                <span className="text-base w-7 text-center shrink-0">{icon}</span>
+                <div className="flex-1 min-w-0">
+                    <p className="text-text-tertiary text-ios-caption1">{label}</p>
+                    <p className="text-ios-body font-medium">{value}</p>
+                </div>
+                {detected && <span className="text-accent-green text-[9px] font-bold shrink-0 bg-accent-green/10 px-1.5 py-0.5 rounded-full">AUTO</span>}
+            </div>
+        );
+    }
+
     return (
         <div className="screen-scroll pb-safe">
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileChange}
-                className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
 
-            {/* Photo/Receipt tagging modal — iOS bottom sheet */}
+            {/* RECEIPT DETAIL SHEET */}
             {capturedImage && (
-                <div className="ios-sheet-backdrop">
-                    <div className="ios-sheet">
-                        <div className="ios-sheet-handle" />
-                        <div className="px-4 pb-6 max-h-[85vh] overflow-y-auto">
-                            <img src={capturedImage} alt="Captured" className="w-full rounded-ios mb-4 max-h-48 object-cover" />
+                <div className="fixed inset-0 z-50 bg-black/70" style={{ backdropFilter: 'blur(8px)' }}>
+                    <div className="absolute inset-0 overflow-y-auto">
+                        <div className="min-h-full flex flex-col">
+                            {/* Sticky top bar */}
+                            <div className="sticky top-0 z-10 glass-header px-4 py-3 flex items-center justify-between">
+                                <button onClick={resetForm} className="text-accent-blue text-ios-body font-medium press-effect">Cancel</button>
+                                <p className="text-ios-headline font-bold">{mode === 'receipt' ? 'Receipt' : 'Photo'}</p>
+                                <button
+                                    onClick={mode === 'receipt' ? handleSaveReceipt : handleSavePhoto}
+                                    disabled={ocrScanning}
+                                    className={`text-ios-body font-bold press-effect ${ocrScanning ? 'text-text-tertiary' : 'text-accent-blue'}`}
+                                >
+                                    {ocrScanning ? 'Scanning...' : 'Save'}
+                                </button>
+                            </div>
 
-                            {mode === 'photo' && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className={labelClass}>Type</label>
-                                        <select value={photoType} onChange={e => setPhotoType(e.target.value)} className="ios-input">
-                                            {PHOTO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Link to Load</label>
-                                        <select value={photoLoadId} onChange={e => setPhotoLoadId(e.target.value)} className="ios-input">
-                                            <option value="">Unassigned</option>
-                                            {loads.map(l => (
-                                                <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Notes (optional)</label>
-                                        <input type="text" value={photoNotes} onChange={e => setPhotoNotes(e.target.value)} className="ios-input" />
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={resetForm} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold min-h-touch text-ios-body press-effect">Cancel</button>
-                                        <button onClick={handleSavePhoto} className="flex-1 bg-accent-blue text-white py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect">Save Photo</button>
-                                    </div>
+                            <div className="flex-1 px-4 pb-8">
+                                {/* Receipt Image */}
+                                <div className="my-4 rounded-ios-lg overflow-hidden shadow-lg">
+                                    <img src={capturedImage} alt="Captured" className="w-full object-contain max-h-56 bg-ios-elevated" />
                                 </div>
-                            )}
 
-                            {mode === 'receipt' && (
-                                <div className="space-y-4">
-                                    {/* OCR Progress */}
-                                    {ocrScanning && (
-                                        <div className="ios-card p-4">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-5 h-5 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
-                                                <span className="text-ios-footnote font-semibold text-accent-blue">Scanning receipt...</span>
+                                {/* PHOTO mode */}
+                                {mode === 'photo' && (
+                                    <div className="space-y-4">
+                                        <div className="ios-card p-4 space-y-4">
+                                            <div>
+                                                <label className={labelClass}>Type</label>
+                                                <select value={photoType} onChange={e => setPhotoType(e.target.value)} className="ios-input">
+                                                    {PHOTO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                                </select>
                                             </div>
-                                            <div className="w-full bg-ios-elevated rounded-full h-2">
-                                                <div className="bg-accent-blue rounded-full h-2 transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+                                            <div>
+                                                <label className={labelClass}>Link to Load</label>
+                                                <select value={photoLoadId} onChange={e => setPhotoLoadId(e.target.value)} className="ios-input">
+                                                    <option value="">Unassigned</option>
+                                                    {loads.map(l => (
+                                                        <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                            <p className="text-text-tertiary text-ios-caption1 mt-1">{ocrProgress}% — extracting text</p>
-                                        </div>
-                                    )}
-
-                                    {/* OCR Success Banner */}
-                                    {ocrDone && !ocrScanning && (
-                                        <div className="bg-accent-green-dim rounded-ios p-3 flex items-center gap-2">
-                                            <span className="text-accent-green text-lg">✅</span>
-                                            <div className="flex-1">
-                                                <p className="text-accent-green text-ios-footnote font-semibold">Receipt scanned</p>
-                                                <p className="text-text-tertiary text-ios-caption2">Fields auto-filled — please verify below</p>
+                                            <div>
+                                                <label className={labelClass}>Notes (optional)</label>
+                                                <input type="text" value={photoNotes} onChange={e => setPhotoNotes(e.target.value)} className="ios-input" />
                                             </div>
-                                            <button onClick={() => setShowRawText(!showRawText)} className="text-accent-blue text-ios-caption1 font-medium press-effect">
-                                                {showRawText ? 'Hide' : 'Raw'}
-                                            </button>
                                         </div>
-                                    )}
+                                    </div>
+                                )}
 
-                                    {/* Raw OCR text (toggle) */}
-                                    {showRawText && ocrRawText && (
-                                        <div className="bg-ios-elevated rounded-ios p-3 max-h-32 overflow-y-auto">
-                                            <p className="text-text-tertiary text-ios-caption2 font-mono whitespace-pre-wrap">{ocrRawText}</p>
-                                        </div>
-                                    )}
+                                {/* RECEIPT mode */}
+                                {mode === 'receipt' && (
+                                    <div>
+                                        {/* Scanning indicator */}
+                                        {ocrScanning && (
+                                            <div className="ios-card p-4 mb-4">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-5 h-5 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
+                                                    <span className="text-ios-footnote font-semibold text-accent-blue">Reading receipt...</span>
+                                                </div>
+                                                <div className="w-full bg-ios-elevated rounded-full h-2">
+                                                    <div className="bg-accent-blue rounded-full h-2 transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+                                                </div>
+                                                <p className="text-text-tertiary text-ios-caption2 mt-1">{ocrProgress}%</p>
+                                            </div>
+                                        )}
 
-                                    <div>
-                                        <label className={labelClass}>Category</label>
-                                        <select value={receiptCategory} onChange={e => setReceiptCategory(e.target.value)} className="ios-input">
-                                            {RECEIPT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
+                                        {/* Extracted Data — clean read-only display */}
+                                        {ocrDone && !ocrScanning && (
+                                            <>
+                                                {/* Amount hero */}
+                                                <div className="ios-card p-5 mb-3 text-center">
+                                                    <p className="text-text-tertiary text-ios-caption1 mb-1">Total Amount</p>
+                                                    <p className="text-ios-large-title font-bold text-accent-green">
+                                                        ${receiptAmount || '0.00'}
+                                                    </p>
+                                                    {receiptVendor && (
+                                                        <p className="text-ios-subhead text-text-secondary mt-1">{receiptVendor}</p>
+                                                    )}
+                                                    {(receiptDate || receiptTime) && (
+                                                        <p className="text-ios-caption1 text-text-tertiary mt-0.5">
+                                                            {receiptDate}{receiptDate && receiptTime ? ' • ' : ''}{receiptTime}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Key details card */}
+                                                <div className="ios-card mb-3">
+                                                    <div className="px-4 pt-3 pb-1">
+                                                        <p className="text-ios-footnote font-semibold text-text-tertiary">DETAILS</p>
+                                                    </div>
+                                                    <DataRow icon="🏷️" label="Category" value={receiptCategory} detected />
+                                                    <div className="ios-separator" />
+                                                    {receiptInvoice && (<><DataRow icon="🔢" label="Invoice / Receipt #" value={receiptInvoice} detected /><div className="ios-separator" /></>)}
+                                                    {receiptAddress && (<><DataRow icon="📍" label="Location" value={receiptAddress} detected /><div className="ios-separator" /></>)}
+                                                    {receiptCardLast4 && (<><DataRow icon="💳" label="Card" value={`•••• ${receiptCardLast4}`} detected /><div className="ios-separator" /></>)}
+                                                    <DataRow icon="💰" label="Payment Method" value={receiptPayment} />
+                                                </div>
+
+                                                {/* Fuel details (only if fuel-related data is detected) */}
+                                                {(receiptGallons || receiptPPG || receiptFuelGrade) && (
+                                                    <div className="ios-card mb-3">
+                                                        <div className="px-4 pt-3 pb-1">
+                                                            <p className="text-ios-footnote font-semibold text-text-tertiary">FUEL</p>
+                                                        </div>
+                                                        {receiptFuelGrade && (<><DataRow icon="⛽" label="Fuel Type" value={receiptFuelGrade} detected /><div className="ios-separator" /></>)}
+                                                        {receiptGallons && (<><DataRow icon="🛢️" label="Gallons" value={`${receiptGallons} gal`} detected /><div className="ios-separator" /></>)}
+                                                        {receiptPPG && (<DataRow icon="💲" label="Price / Gallon" value={`$${receiptPPG}`} detected />)}
+                                                    </div>
+                                                )}
+
+                                                {/* Price breakdown */}
+                                                {(receiptSubtotal || receiptTax) && (
+                                                    <div className="ios-card mb-3">
+                                                        <div className="px-4 pt-3 pb-1">
+                                                            <p className="text-ios-footnote font-semibold text-text-tertiary">BREAKDOWN</p>
+                                                        </div>
+                                                        {receiptSubtotal && (<><DataRow icon="📝" label="Subtotal" value={`$${receiptSubtotal}`} detected /><div className="ios-separator" /></>)}
+                                                        {receiptTax && (<><DataRow icon="🏛️" label="Tax" value={`$${receiptTax}`} detected /><div className="ios-separator" /></>)}
+                                                        <DataRow icon="✅" label="Total" value={`$${receiptAmount || '0.00'}`} detected />
+                                                    </div>
+                                                )}
+
+                                                {/* Line items */}
+                                                {receiptLineItems.length > 0 && (
+                                                    <div className="ios-card mb-3">
+                                                        <div className="px-4 pt-3 pb-1">
+                                                            <p className="text-ios-footnote font-semibold text-text-tertiary">LINE ITEMS</p>
+                                                        </div>
+                                                        {receiptLineItems.map((item, idx) => (
+                                                            <div key={idx}>
+                                                                {idx > 0 && <div className="ios-separator" />}
+                                                                <div className="flex items-center justify-between px-4 py-2.5">
+                                                                    <span className="text-ios-body flex-1 mr-3">{item.label}</span>
+                                                                    <span className="text-ios-body font-semibold">${item.value.toFixed(2)}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Link to load */}
+                                                <div className="ios-card p-4 mb-3">
+                                                    <label className={labelClass}>Link to Load</label>
+                                                    <select value={receiptLoadId} onChange={e => setReceiptLoadId(e.target.value)} className="ios-input">
+                                                        <option value="">General / No Specific Load</option>
+                                                        {loads.map(l => (
+                                                            <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Edit / Raw buttons */}
+                                                <div className="flex gap-2 mb-3">
+                                                    <button onClick={() => setShowEditFields(!showEditFields)}
+                                                        className="flex-1 bg-ios-card border border-ios-separator py-2.5 rounded-ios text-ios-footnote font-medium press-effect">
+                                                        {showEditFields ? 'Hide Fields' : '✏️ Edit Fields'}
+                                                    </button>
+                                                    <button onClick={() => setShowRawText(!showRawText)}
+                                                        className="flex-1 bg-ios-card border border-ios-separator py-2.5 rounded-ios text-ios-footnote font-medium press-effect">
+                                                        {showRawText ? 'Hide Raw' : '📄 Raw Text'}
+                                                    </button>
+                                                </div>
+
+                                                {/* Editable fields (hidden by default) */}
+                                                {showEditFields && (
+                                                    <div className="ios-card p-4 mb-3 space-y-3">
+                                                        <p className="text-ios-footnote font-semibold text-text-tertiary">EDIT EXTRACTED DATA</p>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Amount ($)</label>
+                                                                <input type="number" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} className="ios-input" step="0.01" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Vendor</label>
+                                                                <input type="text" value={receiptVendor} onChange={e => setReceiptVendor(e.target.value)} className="ios-input" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Category</label>
+                                                                <select value={receiptCategory} onChange={e => setReceiptCategory(e.target.value)} className="ios-input">
+                                                                    {RECEIPT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Invoice #</label>
+                                                                <input type="text" value={receiptInvoice} onChange={e => setReceiptInvoice(e.target.value)} className="ios-input" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Gallons</label>
+                                                                <input type="number" value={receiptGallons} onChange={e => setReceiptGallons(e.target.value)} className="ios-input" step="0.001" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">$/Gallon</label>
+                                                                <input type="number" value={receiptPPG} onChange={e => setReceiptPPG(e.target.value)} className="ios-input" step="0.001" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Subtotal</label>
+                                                                <input type="number" value={receiptSubtotal} onChange={e => setReceiptSubtotal(e.target.value)} className="ios-input" step="0.01" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-text-tertiary text-ios-caption2">Tax</label>
+                                                                <input type="number" value={receiptTax} onChange={e => setReceiptTax(e.target.value)} className="ios-input" step="0.01" />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-text-tertiary text-ios-caption2">Payment</label>
+                                                            <select value={receiptPayment} onChange={e => setReceiptPayment(e.target.value)} className="ios-input">
+                                                                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Raw OCR text */}
+                                                {showRawText && ocrRawText && (
+                                                    <div className="ios-card p-4 mb-3">
+                                                        <p className="text-ios-footnote font-semibold text-text-tertiary mb-2">RAW OCR OUTPUT</p>
+                                                        <div className="bg-ios-elevated rounded-ios p-3 max-h-48 overflow-y-auto">
+                                                            <p className="text-text-secondary text-ios-caption1 font-mono whitespace-pre-wrap leading-relaxed">{ocrRawText}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* Pre-OCR manual entry fallback */}
+                                        {!ocrDone && !ocrScanning && (
+                                            <div className="ios-card p-4 space-y-4">
+                                                <p className="text-text-tertiary text-ios-footnote text-center">Scanning will start automatically...</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label className={labelClass}>
-                                            Amount ($)
-                                            {ocrDone && receiptAmount && <span className="text-accent-green ml-2">← auto-detected</span>}
-                                        </label>
-                                        <input type="number" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="ios-input" />
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Link to Load</label>
-                                        <select value={receiptLoadId} onChange={e => setReceiptLoadId(e.target.value)} className="ios-input">
-                                            <option value="">General / No Specific Load</option>
-                                            {loads.map(l => (
-                                                <option key={l.id} value={l.id}>{formatContainerNumber(l.containerNumber) || l.id.slice(0, 8)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>
-                                            Vendor
-                                            {ocrDone && receiptVendor && <span className="text-accent-green ml-2">← auto-detected</span>}
-                                        </label>
-                                        <input type="text" value={receiptVendor} onChange={e => setReceiptVendor(e.target.value)} className="ios-input" />
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Payment Method</label>
-                                        <select value={receiptPayment} onChange={e => setReceiptPayment(e.target.value)} className="ios-input">
-                                            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={resetForm} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold min-h-touch text-ios-body press-effect">Cancel</button>
-                                        <button
-                                            onClick={handleSaveReceipt}
-                                            disabled={ocrScanning}
-                                            className={`flex-1 py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect ${ocrScanning ? 'bg-ios-elevated text-text-tertiary' : 'bg-accent-blue text-white'}`}
-                                        >
-                                            {ocrScanning ? 'Scanning...' : 'Save Receipt'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -292,27 +437,17 @@ export default function CaptureScreen() {
             <div className="px-4 pt-6">
                 <h1 className="text-ios-large-title font-bold mb-5">Capture</h1>
 
-                {/* Two Big Buttons */}
                 <div className="grid grid-cols-2 gap-3 mb-5">
-                    <button
-                        onClick={() => startCapture('photo')}
-                        className="bg-accent-blue rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect"
-                    >
+                    <button onClick={() => startCapture('photo')} className="bg-accent-blue rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect">
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-                            <circle cx="12" cy="13" r="4" />
+                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
                         </svg>
                         <span className="font-bold text-ios-body text-white">Take Photo</span>
                     </button>
-                    <button
-                        onClick={() => startCapture('receipt')}
-                        className="bg-accent-green rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect"
-                    >
+                    <button onClick={() => startCapture('receipt')} className="bg-accent-green rounded-ios-lg p-5 flex flex-col items-center gap-3 min-h-[110px] press-effect">
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                            <line x1="8" y1="13" x2="16" y2="13" />
-                            <line x1="8" y1="17" x2="13" y2="17" />
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                            <line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" />
                         </svg>
                         <div className="text-center">
                             <span className="font-bold text-ios-body text-black/80 block">Scan Receipt</span>
@@ -321,20 +456,14 @@ export default function CaptureScreen() {
                     </button>
                 </div>
 
-                {/* Filter */}
                 <div className="ios-segmented mb-4">
                     {['all', 'photos', 'receipts'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`ios-segmented-btn ${filter === f ? 'active' : ''}`}
-                        >
+                        <button key={f} onClick={() => setFilter(f)} className={`ios-segmented-btn ${filter === f ? 'active' : ''}`}>
                             {f.charAt(0).toUpperCase() + f.slice(1)}
                         </button>
                     ))}
                 </div>
 
-                {/* Gallery */}
                 {filteredCaptures.length > 0 ? (
                     <div className="photo-grid">
                         {filteredCaptures.map((c) => (
@@ -347,8 +476,7 @@ export default function CaptureScreen() {
                                     </div>
                                 )}
                                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${c.captureType === 'receipt' ? 'bg-accent-green/80 text-black' : 'bg-accent-blue/80 text-white'
-                                        }`}>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${c.captureType === 'receipt' ? 'bg-accent-green/80 text-black' : 'bg-accent-blue/80 text-white'}`}>
                                         {c.captureType === 'receipt' ? c.category : c.type}
                                     </span>
                                     {c.captureType === 'receipt' && c.amount > 0 && (
