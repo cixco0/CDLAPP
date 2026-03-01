@@ -59,31 +59,44 @@ export default function DocumentHistory() {
                     <p className="text-text-tertiary text-center py-8 text-ios-subhead">No documents found</p>
                 ) : (
                     <div className="ios-card">
-                        {filtered.map((d, idx) => (
-                            <div key={d.id}>
-                                {idx > 0 && <div className="ios-separator" />}
-                                <div className="ios-row">
-                                    {d.data ? (
-                                        <img src={d.data} alt="" className="w-11 h-11 rounded-ios-sm object-cover shrink-0" />
-                                    ) : (
-                                        <div className="w-11 h-11 rounded-ios-sm bg-ios-elevated flex items-center justify-center text-lg shrink-0">
-                                            {d.docType === 'inspection' ? '📝' : d.docType === 'receipt' ? '🧾' : '📸'}
+                        {filtered.map((d, idx) => {
+                            const isClickable = d.docType === 'receipt' || d.docType === 'inspection';
+                            const handleClick = () => {
+                                if (d.docType === 'receipt') navigate(`/receipt/${d.id}`);
+                                else if (d.docType === 'inspection') navigate(`/inspect/detail/${d.id}`);
+                            };
+                            return (
+                                <div key={d.id}>
+                                    {idx > 0 && <div className="ios-separator" />}
+                                    <div
+                                        className={`ios-row ${isClickable ? 'press-effect cursor-pointer' : ''}`}
+                                        onClick={isClickable ? handleClick : undefined}
+                                    >
+                                        {d.data ? (
+                                            <img src={d.data} alt="" className="w-11 h-11 rounded-ios-sm object-cover shrink-0" />
+                                        ) : (
+                                            <div className="w-11 h-11 rounded-ios-sm bg-ios-elevated flex items-center justify-center text-lg shrink-0">
+                                                {d.docType === 'inspection' ? '📝' : d.docType === 'receipt' ? '🧾' : '📸'}
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-ios-body font-medium truncate">{d.label}</p>
+                                            <p className="text-text-tertiary text-ios-caption1">{formatDate(d.createdAt)} {formatTime(d.createdAt)}</p>
+                                            {d.containerNumber && <p className="text-text-tertiary text-ios-caption2">{formatContainerNumber(d.containerNumber)}</p>}
                                         </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-ios-body font-medium truncate">{d.label}</p>
-                                        <p className="text-text-tertiary text-ios-caption1">{formatDate(d.createdAt)} {formatTime(d.createdAt)}</p>
-                                        {d.containerNumber && <p className="text-text-tertiary text-ios-caption2">{formatContainerNumber(d.containerNumber)}</p>}
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${d.docType === 'inspection' ? 'bg-accent-blue/20 text-accent-blue' :
+                                                d.docType === 'receipt' ? 'bg-accent-green/20 text-accent-green' :
+                                                    'bg-accent-yellow/20 text-accent-yellow'
+                                                }`}>
+                                                {d.docType}
+                                            </span>
+                                            {isClickable && <span className="text-text-tertiary text-lg">›</span>}
+                                        </div>
                                     </div>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${d.docType === 'inspection' ? 'bg-accent-blue/20 text-accent-blue' :
-                                        d.docType === 'receipt' ? 'bg-accent-green/20 text-accent-green' :
-                                            'bg-accent-yellow/20 text-accent-yellow'
-                                        }`}>
-                                        {d.docType}
-                                    </span>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
