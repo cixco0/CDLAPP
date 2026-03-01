@@ -271,32 +271,64 @@ export default function CaptureScreen() {
             <div className="px-4 pt-6">
                 <h1 className="text-ios-large-title font-bold mb-5">Capture</h1>
 
-                {/* Photo capture options */}
-                <div className="ios-card p-4 mb-3">
-                    <p className="text-ios-footnote font-semibold text-text-secondary mb-3">📸 Photo</p>
-                    <div className="flex gap-2">
-                        <button onClick={() => startCapture('photo', 'camera')} className="flex-1 bg-accent-blue py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
-                            📷 Camera
-                        </button>
-                        <button onClick={() => startCapture('photo', 'gallery')} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
-                            🖼️ Gallery
-                        </button>
+                {/* Two cards side by side */}
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                    {/* Photo Card */}
+                    <div className="bg-gradient-to-br from-accent-blue to-blue-600 rounded-2xl p-4 shadow-lg">
+                        <div className="text-center mb-4">
+                            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                                    <circle cx="12" cy="13" r="4" />
+                                </svg>
+                            </div>
+                            <p className="text-white font-bold text-ios-body">Photo</p>
+                            <p className="text-white/60 text-[11px]">Documents & proof</p>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => startCapture('photo', 'camera')}
+                                className="w-full bg-white/20 backdrop-blur py-2.5 rounded-xl font-semibold text-white text-ios-footnote press-effect flex items-center justify-center gap-2"
+                            >
+                                📷 Camera
+                            </button>
+                            <button
+                                onClick={() => startCapture('photo', 'gallery')}
+                                className="w-full bg-white/10 py-2.5 rounded-xl font-medium text-white/80 text-ios-footnote press-effect flex items-center justify-center gap-2"
+                            >
+                                🖼️ Gallery
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* Receipt capture options */}
-                <div className="ios-card p-4 mb-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="text-ios-footnote font-semibold text-text-secondary">🧾 Receipt</p>
-                        <span className="text-[10px] text-accent-green font-medium">Auto-reads text</span>
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => startCapture('receipt', 'camera')} className="flex-1 bg-accent-green text-black py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
-                            📷 Camera
-                        </button>
-                        <button onClick={() => startCapture('receipt', 'gallery')} className="flex-1 bg-ios-elevated py-3 rounded-ios font-semibold text-ios-body press-effect flex items-center justify-center gap-2">
-                            🖼️ Gallery
-                        </button>
+                    {/* Receipt Card */}
+                    <div className="bg-gradient-to-br from-accent-green to-emerald-600 rounded-2xl p-4 shadow-lg">
+                        <div className="text-center mb-4">
+                            <div className="w-14 h-14 bg-black/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="8" y1="13" x2="16" y2="13" />
+                                    <line x1="8" y1="17" x2="13" y2="17" />
+                                </svg>
+                            </div>
+                            <p className="text-black/80 font-bold text-ios-body">Receipt</p>
+                            <p className="text-black/50 text-[11px]">Auto-reads text</p>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => startCapture('receipt', 'camera')}
+                                className="w-full bg-black/20 backdrop-blur py-2.5 rounded-xl font-semibold text-black/80 text-ios-footnote press-effect flex items-center justify-center gap-2"
+                            >
+                                📷 Camera
+                            </button>
+                            <button
+                                onClick={() => startCapture('receipt', 'gallery')}
+                                className="w-full bg-black/10 py-2.5 rounded-xl font-medium text-black/60 text-ios-footnote press-effect flex items-center justify-center gap-2"
+                            >
+                                🖼️ Gallery
+                            </button>
+                        </div>
                     </div>
                 </div>
 
