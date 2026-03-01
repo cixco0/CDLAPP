@@ -371,13 +371,16 @@ export default function HomeScreen() {
                         return (
                             <div key={shift.date}>
                                 {idx > 0 && <div className="ios-separator" />}
-                                <div className="ios-row">
+                                <div className="ios-row press-effect cursor-pointer" onClick={() => navigate(`/shift/${shift.date}`)}>
                                     <div className="ios-row-icon bg-accent-blue text-white">⏱️</div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-ios-body">{dayLabel}</p>
                                         <p className="text-text-tertiary text-ios-caption1">{firstInTime} → {lastOutTime}</p>
                                     </div>
-                                    <span className={`font-bold text-ios-footnote ${hrs >= 8 ? 'text-accent-green' : 'text-text-secondary'}`}>{timeStr}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`font-bold text-ios-footnote ${hrs >= 8 ? 'text-accent-green' : 'text-text-secondary'}`}>{timeStr}</span>
+                                        <span className="text-text-tertiary text-lg">›</span>
+                                    </div>
                                 </div>
                             </div>
                         );

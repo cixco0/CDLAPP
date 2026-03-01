@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomeScreen from './screens/Home/HomeScreen';
+import ShiftDetailScreen from './screens/Home/ShiftDetailScreen';
 import LoadsScreen from './screens/Loads/LoadsScreen';
 import AddLoadScreen from './screens/Loads/AddLoadScreen';
 import LoadDetailScreen from './screens/Loads/LoadDetailScreen';
@@ -26,6 +27,7 @@ export default function App() {
         <Layout>
             <Routes>
                 <Route path="/" element={<HomeScreen />} />
+                <Route path="/shift/:date" element={<ShiftDetailScreen />} />
                 <Route path="/loads" element={<LoadsScreen />} />
                 <Route path="/loads/new" element={<AddLoadScreen />} />
                 <Route path="/loads/:id" element={<LoadDetailScreen />} />
