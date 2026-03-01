@@ -32,47 +32,49 @@ export default function ReceiptsSummary() {
 
     const monthLabel = new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    // TODO: Export detention package as PDF
-    // TODO: Integration API for TMS platforms
-
     return (
         <div className="screen-scroll pb-safe">
             <div className="px-4 pt-4">
                 <div className="flex items-center gap-3 mb-6">
-                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-xl">←</button>
-                    <h1 className="text-xl-touch font-bold">Receipts Summary</h1>
+                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-accent-blue press-effect">
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2L2 10L10 18" /></svg>
+                    </button>
+                    <h1 className="text-ios-title2 font-bold">Receipts Summary</h1>
                 </div>
 
                 {/* Month Selector */}
-                <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="w-full bg-surface-input text-white rounded-xl px-4 py-3 min-h-touch border border-border mb-4" />
+                <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="ios-input mb-4" />
 
                 {/* Grand Total */}
-                <div className="bg-surface-card rounded-2xl p-4 text-center mb-4">
-                    <p className="text-text-muted text-sm">{monthLabel}</p>
-                    <p className="text-3xl-touch font-bold mt-1">{formatCurrency(grandTotal)}</p>
-                    <p className="text-text-muted text-xs">{monthReceipts.length} receipts</p>
+                <div className="ios-card p-4 text-center mb-4">
+                    <p className="text-text-tertiary text-ios-footnote">{monthLabel}</p>
+                    <p className="text-ios-large-title font-bold mt-1">{formatCurrency(grandTotal)}</p>
+                    <p className="text-text-tertiary text-ios-caption1">{monthReceipts.length} receipts</p>
                 </div>
 
                 {/* Category Breakdown */}
-                <div className="space-y-3 mb-6">
-                    {categoryTotals.map(({ category, total, count }) => (
-                        <div key={category} className="bg-surface-card rounded-xl p-3">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">{category}</span>
-                                <div className="text-right">
-                                    <span className="font-bold text-sm">{formatCurrency(total)}</span>
-                                    <span className="text-text-muted text-xs ml-2">({count})</span>
+                <div className="ios-card mb-4">
+                    {categoryTotals.map(({ category, total, count }, idx) => (
+                        <div key={category}>
+                            {idx > 0 && <div className="ios-separator" />}
+                            <div className="p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-ios-body font-medium">{category}</span>
+                                    <div className="text-right">
+                                        <span className="font-bold text-ios-body">{formatCurrency(total)}</span>
+                                        <span className="text-text-tertiary text-ios-caption1 ml-2">({count})</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="w-full bg-surface-elevated rounded-full h-2">
-                                <div className="bg-accent-green rounded-full h-2 transition-all" style={{ width: `${(total / maxTotal) * 100}%` }} />
+                                <div className="w-full bg-ios-elevated rounded-full h-2">
+                                    <div className="bg-accent-blue rounded-full h-2 transition-all" style={{ width: `${(total / maxTotal) * 100}%` }} />
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                {/* Export button placeholder */}
-                <button className="w-full bg-surface-card text-text-secondary py-3 rounded-xl font-medium min-h-touch border border-border">
+                {/* Export button */}
+                <button className="w-full bg-ios-card text-text-secondary py-3 rounded-ios font-medium min-h-touch border border-ios-separator text-ios-body">
                     Export as CSV (Coming Soon)
                 </button>
             </div>

@@ -38,25 +38,17 @@ export default function ContainerInspection() {
     }
 
     function handleCondition(idx, condition) {
-        setPositions(prev => prev.map((p, i) =>
-            i === idx ? { ...p, condition } : p
-        ));
+        setPositions(prev => prev.map((p, i) => i === idx ? { ...p, condition } : p));
     }
 
     function handleDescription(idx, description) {
-        setPositions(prev => prev.map((p, i) =>
-            i === idx ? { ...p, description } : p
-        ));
+        setPositions(prev => prev.map((p, i) => i === idx ? { ...p, description } : p));
     }
 
     async function handleSubmit() {
-        if (!overallCondition) {
-            alert('Please select overall condition.');
-            return;
-        }
+        if (!overallCondition) { alert('Please select overall condition.'); return; }
         await createInspection({
-            type: 'container',
-            containerNumber,
+            type: 'container', containerNumber,
             items: positions.map(({ id, label, photo, condition, description }) => ({
                 id, label, hasPhoto: !!photo, condition, description,
             })),
@@ -70,17 +62,20 @@ export default function ContainerInspection() {
         return (
             <div className="screen-scroll flex flex-col items-center justify-center px-4 pb-safe">
                 <div className="text-center">
-                    <div className="text-6xl mb-4">✅</div>
-                    <h2 className="text-2xl-touch font-bold text-accent-green mb-2">Container Inspection Complete ✓</h2>
-                    <p className="text-text-secondary mb-2">{containerNumber || '—'}</p>
-                    <p className="text-text-secondary mb-6">{formatDateTime(new Date())}</p>
-                    <button onClick={() => navigate('/')} className="bg-accent-green text-black px-8 py-3 rounded-xl font-bold min-h-touch">Back to Home</button>
+                    <div className="w-20 h-20 rounded-full bg-accent-green/15 flex items-center justify-center mx-auto mb-4">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                    </div>
+                    <h2 className="text-ios-title2 font-bold text-accent-green mb-2">Container Inspection Complete</h2>
+                    <p className="text-text-secondary text-ios-subhead mb-1">{containerNumber || '—'}</p>
+                    <p className="text-text-tertiary text-ios-footnote mb-6">{formatDateTime(new Date())}</p>
+                    <button onClick={() => navigate('/')} className="bg-accent-blue text-white px-8 py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect">Back to Home</button>
                 </div>
             </div>
         );
     }
 
-    const inputClass = "w-full bg-surface-input text-white rounded-xl px-4 py-3 min-h-touch text-touch border border-border";
     const positionsDone = positions.filter(p => p.photo).length;
 
     return (
@@ -89,112 +84,93 @@ export default function ContainerInspection() {
 
             <div className="px-4 pt-4">
                 <div className="flex items-center gap-3 mb-4">
-                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-xl">←</button>
-                    <h1 className="text-xl-touch font-bold">Container Inspection</h1>
+                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-accent-blue press-effect">
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2L2 10L10 18" /></svg>
+                    </button>
+                    <h1 className="text-ios-title2 font-bold">Container Inspection</h1>
                 </div>
 
-                <div className="space-y-3 mb-4">
+                <div className="ios-card p-4 mb-4 space-y-3">
                     <div>
-                        <label className="text-text-secondary text-sm">Container #</label>
-                        <input type="text" value={containerNumber} onChange={e => setContainerNumber(e.target.value.toUpperCase())} placeholder="MSCU1234567" className={inputClass} />
+                        <label className="text-text-secondary text-ios-footnote">Container #</label>
+                        <input type="text" value={containerNumber} onChange={e => setContainerNumber(e.target.value.toUpperCase())} placeholder="MSCU1234567" className="ios-input mt-1" />
                     </div>
                     <div>
-                        <label className="text-text-secondary text-sm">Seal # Verification</label>
-                        <input type="text" value={sealNumber} onChange={e => setSealNumber(e.target.value)} className={inputClass} />
+                        <label className="text-text-secondary text-ios-footnote">Seal # Verification</label>
+                        <input type="text" value={sealNumber} onChange={e => setSealNumber(e.target.value)} className="ios-input mt-1" />
                     </div>
                 </div>
 
                 {/* Progress */}
-                <div className="bg-surface-card rounded-xl p-3 mb-4">
+                <div className="ios-card p-3 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold">Photo Progress</span>
-                        <span className="text-text-muted text-sm">{positionsDone} / {positions.length}</span>
+                        <span className="text-ios-footnote font-semibold">Photo Progress</span>
+                        <span className="text-text-tertiary text-ios-caption1">{positionsDone} / {positions.length}</span>
                     </div>
-                    <div className="w-full bg-surface-elevated rounded-full h-2">
-                        <div className="bg-accent-green rounded-full h-2 transition-all" style={{ width: `${(positionsDone / positions.length) * 100}%` }} />
+                    <div className="w-full bg-ios-elevated rounded-full h-2">
+                        <div className="bg-accent-blue rounded-full h-2 transition-all" style={{ width: `${(positionsDone / positions.length) * 100}%` }} />
                     </div>
                 </div>
 
                 {/* Position Cards */}
-                <div className="space-y-3 mb-6">
+                <div className="ios-card mb-4">
                     {positions.map((pos, idx) => (
-                        <div key={pos.id} className="bg-surface-card rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-sm font-semibold">{pos.id}. {pos.label}</p>
-                                {pos.photo && <span className="text-accent-green text-xs">✓ Captured</span>}
-                            </div>
-
-                            {pos.photo ? (
-                                <div className="mb-3">
-                                    <img src={pos.photo} alt="" className="w-full h-32 object-cover rounded-lg" />
+                        <div key={pos.id}>
+                            {idx > 0 && <div className="ios-separator" />}
+                            <div className="p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-ios-footnote font-semibold">{pos.id}. {pos.label}</p>
+                                    {pos.photo && <span className="text-accent-green text-ios-caption1 font-medium">✓ Captured</span>}
                                 </div>
-                            ) : null}
 
-                            <div className="flex gap-2 mb-2">
-                                <button
-                                    onClick={() => handleCapture(idx)}
-                                    className={`flex-1 py-2 rounded-lg text-sm font-semibold min-h-touch transition-smooth active:scale-95 ${pos.photo ? 'bg-surface-elevated text-text-secondary' : 'bg-accent-blue text-white'
-                                        }`}
-                                >
-                                    📸 {pos.photo ? 'Retake' : 'Capture'}
-                                </button>
-                                <button
-                                    onClick={() => handleCondition(idx, 'good')}
-                                    className={`py-2 px-3 rounded-lg text-sm font-semibold border transition-smooth ${pos.condition === 'good' ? 'bg-accent-green/20 text-accent-green border-accent-green' : 'bg-surface-elevated text-text-muted border-border'
-                                        }`}
-                                >
-                                    ✅ Good
-                                </button>
-                                <button
-                                    onClick={() => handleCondition(idx, 'damage')}
-                                    className={`py-2 px-3 rounded-lg text-sm font-semibold border transition-smooth ${pos.condition === 'damage' ? 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow' : 'bg-surface-elevated text-text-muted border-border'
-                                        }`}
-                                >
-                                    ⚠️ Damage
-                                </button>
+                                {pos.photo && (
+                                    <div className="mb-3">
+                                        <img src={pos.photo} alt="" className="w-full h-32 object-cover rounded-ios" />
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 mb-2">
+                                    <button onClick={() => handleCapture(idx)}
+                                        className={`flex-1 py-2 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect ${pos.photo ? 'bg-ios-elevated text-text-secondary' : 'bg-accent-blue text-white'}`}>
+                                        📸 {pos.photo ? 'Retake' : 'Capture'}
+                                    </button>
+                                    <button onClick={() => handleCondition(idx, 'good')}
+                                        className={`py-2 px-3 rounded-ios text-ios-caption1 font-semibold border press-effect ${pos.condition === 'good' ? 'bg-accent-green-dim text-accent-green border-accent-green/30' : 'bg-ios-elevated text-text-tertiary border-ios-separator'}`}>
+                                        ✅ Good
+                                    </button>
+                                    <button onClick={() => handleCondition(idx, 'damage')}
+                                        className={`py-2 px-3 rounded-ios text-ios-caption1 font-semibold border press-effect ${pos.condition === 'damage' ? 'bg-accent-yellow-dim text-accent-yellow border-accent-yellow/30' : 'bg-ios-elevated text-text-tertiary border-ios-separator'}`}>
+                                        ⚠️ Damage
+                                    </button>
+                                </div>
+
+                                {pos.condition === 'damage' && (
+                                    <input type="text" value={pos.description} onChange={e => handleDescription(idx, e.target.value)} placeholder="Describe damage..." className="ios-input text-ios-footnote" />
+                                )}
                             </div>
-
-                            {pos.condition === 'damage' && (
-                                <input
-                                    type="text"
-                                    value={pos.description}
-                                    onChange={(e) => handleDescription(idx, e.target.value)}
-                                    placeholder="Describe damage..."
-                                    className="w-full bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border"
-                                />
-                            )}
                         </div>
                     ))}
                 </div>
 
                 {/* Overall Condition */}
-                <div className="bg-surface-card rounded-xl p-4 mb-4">
-                    <p className="text-sm font-semibold text-text-secondary mb-3">Overall Condition</p>
+                <div className="ios-card p-4 mb-4">
+                    <p className="text-ios-footnote font-semibold text-text-secondary mb-3">Overall Condition</p>
                     <div className="grid grid-cols-2 gap-2">
                         {[
-                            { key: 'Good', color: 'green' },
-                            { key: 'Minor Damage', color: 'yellow' },
-                            { key: 'Major Damage', color: 'red' },
-                            { key: 'Rejected', color: 'red' },
-                        ].map((c) => (
-                            <button
-                                key={c.key}
-                                onClick={() => setOverallCondition(c.key)}
-                                className={`py-3 rounded-xl text-sm font-semibold border transition-smooth ${overallCondition === c.key
-                                        ? `bg-accent-${c.color}/20 text-accent-${c.color} border-accent-${c.color}`
-                                        : 'bg-surface-elevated text-text-muted border-border'
-                                    }`}
-                            >
+                            { key: 'Good', cls: 'bg-accent-green-dim text-accent-green border-accent-green/30' },
+                            { key: 'Minor Damage', cls: 'bg-accent-yellow-dim text-accent-yellow border-accent-yellow/30' },
+                            { key: 'Major Damage', cls: 'bg-accent-red-dim text-accent-red border-accent-red/30' },
+                            { key: 'Rejected', cls: 'bg-accent-red-dim text-accent-red border-accent-red/30' },
+                        ].map(c => (
+                            <button key={c.key} onClick={() => setOverallCondition(c.key)}
+                                className={`py-3 rounded-ios text-ios-footnote font-semibold border press-effect ${overallCondition === c.key ? c.cls : 'bg-ios-elevated text-text-tertiary border-ios-separator'}`}>
                                 {c.key}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <button
-                    onClick={handleSubmit}
-                    className="w-full bg-accent-green text-black py-4 rounded-xl font-bold text-lg min-h-touch-lg mb-8 transition-smooth active:scale-[0.98]"
-                >
+                <button onClick={handleSubmit} className="w-full bg-accent-blue text-white py-4 rounded-ios font-bold text-ios-body min-h-touch-lg mb-8 press-effect">
                     Submit Inspection
                 </button>
             </div>

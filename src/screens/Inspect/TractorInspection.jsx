@@ -14,7 +14,7 @@ export default function TractorInspection() {
     const [items, setItems] = useState(
         TRACTOR_INSPECTION_ITEMS.map((item) => ({
             ...item,
-            status: 'pass', // 'pass' | 'defect' | 'na'
+            status: 'pass',
             description: '',
             severity: '',
             photo: null,
@@ -48,7 +48,6 @@ export default function TractorInspection() {
         );
     }
 
-    // Signature drawing
     const startDraw = useCallback((e) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -71,7 +70,7 @@ export default function TractorInspection() {
         const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
         const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
         ctx.lineTo(x, y);
-        ctx.strokeStyle = '#22C55E';
+        ctx.strokeStyle = '#007AFF';
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.stroke();
@@ -132,14 +131,18 @@ export default function TractorInspection() {
         return (
             <div className="screen-scroll flex flex-col items-center justify-center px-4 pb-safe">
                 <div className="text-center">
-                    <div className="text-6xl mb-4">✅</div>
-                    <h2 className="text-2xl-touch font-bold text-accent-green mb-2">
-                        {subType === 'pre-trip' ? 'Pre-Trip' : 'Post-Trip'} Complete ✓
+                    <div className="w-20 h-20 rounded-full bg-accent-green/20 flex items-center justify-center mx-auto mb-4">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                    </div>
+                    <h2 className="text-ios-title2 font-bold text-accent-green mb-2">
+                        {subType === 'pre-trip' ? 'Pre-Trip' : 'Post-Trip'} Complete
                     </h2>
-                    <p className="text-text-secondary mb-6">{formatDateTime(new Date())}</p>
+                    <p className="text-text-secondary text-ios-subhead mb-6">{formatDateTime(new Date())}</p>
                     <button
                         onClick={() => navigate('/')}
-                        className="bg-accent-green text-black px-8 py-3 rounded-xl font-bold min-h-touch transition-smooth active:scale-[0.98]"
+                        className="bg-accent-blue text-white px-8 py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect"
                     >
                         Back to Home
                     </button>
@@ -148,133 +151,139 @@ export default function TractorInspection() {
         );
     }
 
-    const inputClass = "w-full bg-surface-input text-white rounded-xl px-4 py-3 min-h-touch text-touch border border-border";
-
     return (
         <div className="screen-scroll pb-safe">
             <div className="px-4 pt-4">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
-                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-xl">←</button>
-                    <h1 className="text-xl-touch font-bold">Tractor Inspection</h1>
+                    <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch flex items-center justify-center text-accent-blue press-effect">
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 2L2 10L10 18" />
+                        </svg>
+                    </button>
+                    <h1 className="text-ios-title2 font-bold">Tractor Inspection</h1>
                 </div>
 
-                {/* Pre/Post toggle */}
-                <div className="flex rounded-xl bg-surface-card p-1 mb-4">
+                {/* Pre/Post Segmented Control */}
+                <div className="ios-segmented mb-4">
                     {['pre-trip', 'post-trip'].map((t) => (
                         <button
                             key={t}
                             onClick={() => setSubType(t)}
-                            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-smooth ${subType === t ? 'bg-accent-green text-black' : 'text-text-secondary'
-                                }`}
+                            className={`ios-segmented-btn ${subType === t ? 'active' : ''}`}
                         >
                             {t === 'pre-trip' ? 'Pre-Trip' : 'Post-Trip'}
                         </button>
                     ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label className="text-text-secondary text-sm">Truck #</label>
-                        <p className="font-bold">{settings.truckNumber || '—'}</p>
-                    </div>
-                    <div>
-                        <label className="text-text-secondary text-sm">Odometer</label>
-                        <input
-                            type="number"
-                            value={odometer}
-                            onChange={(e) => setOdometer(e.target.value)}
-                            placeholder="Enter miles"
-                            className={inputClass}
-                        />
+                <div className="ios-card p-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-text-secondary text-ios-footnote">Truck #</label>
+                            <p className="font-bold text-ios-body">{settings.truckNumber || '—'}</p>
+                        </div>
+                        <div>
+                            <label className="text-text-secondary text-ios-footnote">Odometer</label>
+                            <input
+                                type="number"
+                                value={odometer}
+                                onChange={(e) => setOdometer(e.target.value)}
+                                placeholder="Enter miles"
+                                className="ios-input mt-1"
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Checklist */}
-                <div className="space-y-2 mb-6">
-                    {items.map((item) => (
-                        <div key={item.id} className="bg-surface-card rounded-xl p-3">
-                            <div className="flex items-start gap-2">
-                                <span className="text-text-muted text-xs mt-1 w-6 shrink-0">{item.id}.</span>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium mb-2">{item.label}</p>
-                                    <div className="flex gap-2">
-                                        {[
-                                            { key: 'pass', label: '✅ Pass', cls: 'bg-accent-green/20 text-accent-green border-accent-green' },
-                                            { key: 'defect', label: '⚠️ Defect', cls: 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow' },
-                                            { key: 'na', label: '➖ N/A', cls: 'bg-surface-elevated text-text-muted border-border' },
-                                        ].map((opt) => (
-                                            <button
-                                                key={opt.key}
-                                                onClick={() => handleItemStatus(item.id, opt.key)}
-                                                className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-smooth ${item.status === opt.key ? opt.cls : 'bg-surface-elevated text-text-muted border-border'
-                                                    }`}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {item.status === 'defect' && (
-                                        <div className="mt-2 space-y-2">
-                                            <input
-                                                type="text"
-                                                value={item.description}
-                                                onChange={(e) => handleItemField(item.id, 'description', e.target.value)}
-                                                placeholder="Describe the defect..."
-                                                className="w-full bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border"
-                                            />
-                                            <div className="flex gap-2">
+                <div className="ios-card mb-4">
+                    {items.map((item, idx) => (
+                        <div key={item.id}>
+                            {idx > 0 && <div className="ios-separator" />}
+                            <div className="p-3">
+                                <div className="flex items-start gap-2">
+                                    <span className="text-text-tertiary text-ios-caption1 mt-1 w-6 shrink-0">{item.id}.</span>
+                                    <div className="flex-1">
+                                        <p className="text-ios-footnote font-medium mb-2">{item.label}</p>
+                                        <div className="flex gap-2">
+                                            {[
+                                                { key: 'pass', label: '✅', cls: 'bg-accent-green-dim text-accent-green border-accent-green/30' },
+                                                { key: 'defect', label: '⚠️', cls: 'bg-accent-yellow-dim text-accent-yellow border-accent-yellow/30' },
+                                                { key: 'na', label: '➖', cls: 'bg-ios-elevated text-text-tertiary border-ios-separator' },
+                                            ].map((opt) => (
                                                 <button
-                                                    onClick={() => handleItemField(item.id, 'severity', 'minor')}
-                                                    className={`flex-1 py-2 rounded-lg text-xs font-medium border ${item.severity === 'minor' ? 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow' : 'bg-surface-elevated text-text-muted border-border'
+                                                    key={opt.key}
+                                                    onClick={() => handleItemStatus(item.id, opt.key)}
+                                                    className={`flex-1 py-2 rounded-ios-sm text-ios-caption1 font-semibold border press-effect ${item.status === opt.key ? opt.cls : 'bg-ios-elevated text-text-tertiary border-ios-separator'
                                                         }`}
                                                 >
-                                                    Minor (can operate)
+                                                    {opt.label}
                                                 </button>
-                                                <button
-                                                    onClick={() => handleItemField(item.id, 'severity', 'major')}
-                                                    className={`flex-1 py-2 rounded-lg text-xs font-medium border ${item.severity === 'major' ? 'bg-accent-red/20 text-accent-red border-accent-red' : 'bg-surface-elevated text-text-muted border-border'
-                                                        }`}
-                                                >
-                                                    Major (needs repair)
-                                                </button>
-                                            </div>
+                                            ))}
                                         </div>
-                                    )}
+
+                                        {item.status === 'defect' && (
+                                            <div className="mt-2 space-y-2">
+                                                <input
+                                                    type="text"
+                                                    value={item.description}
+                                                    onChange={(e) => handleItemField(item.id, 'description', e.target.value)}
+                                                    placeholder="Describe the defect..."
+                                                    className="ios-input text-ios-footnote"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleItemField(item.id, 'severity', 'minor')}
+                                                        className={`flex-1 py-2 rounded-ios-sm text-ios-caption1 font-medium border press-effect ${item.severity === 'minor' ? 'bg-accent-yellow-dim text-accent-yellow border-accent-yellow/30' : 'bg-ios-elevated text-text-tertiary border-ios-separator'
+                                                            }`}
+                                                    >
+                                                        Minor
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleItemField(item.id, 'severity', 'major')}
+                                                        className={`flex-1 py-2 rounded-ios-sm text-ios-caption1 font-medium border press-effect ${item.severity === 'major' ? 'bg-accent-red-dim text-accent-red border-accent-red/30' : 'bg-ios-elevated text-text-tertiary border-ios-separator'
+                                                            }`}
+                                                    >
+                                                        Major
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+                                {!item.required && (
+                                    <span className="text-ios-caption2 text-text-tertiary ml-8">Best practice</span>
+                                )}
                             </div>
-                            {!item.required && (
-                                <span className="text-[10px] text-text-muted ml-8">Best practice</span>
-                            )}
                         </div>
                     ))}
                 </div>
 
                 {/* Confirmation */}
-                <div className="bg-surface-card rounded-xl p-4 mb-4">
+                <div className="ios-card p-4 mb-4">
                     <label className="flex items-center gap-3 min-h-touch">
                         <input
                             type="checkbox"
                             checked={confirmed}
                             onChange={(e) => setConfirmed(e.target.checked)}
-                            className="w-6 h-6 rounded accent-accent-green"
+                            className="w-6 h-6 rounded accent-[#007AFF]"
                         />
-                        <span className="text-sm font-medium">All items above have been inspected</span>
+                        <span className="text-ios-footnote font-medium">All items above have been inspected</span>
                     </label>
                 </div>
 
                 {/* Signature */}
-                <div className="bg-surface-card rounded-xl p-4 mb-4">
+                <div className="ios-card p-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-semibold text-text-secondary">Digital Signature</p>
-                        <button onClick={clearSignature} className="text-accent-red text-xs font-medium">Clear</button>
+                        <p className="text-ios-footnote font-semibold text-text-secondary">Digital Signature</p>
+                        <button onClick={clearSignature} className="text-accent-red text-ios-caption1 font-medium press-effect">Clear</button>
                     </div>
                     <canvas
                         ref={canvasRef}
                         width={300}
                         height={120}
-                        className="w-full bg-surface-input rounded-lg border border-border signature-canvas"
+                        className="w-full bg-ios-input rounded-ios border border-ios-separator signature-canvas"
                         onMouseDown={startDraw}
                         onMouseMove={draw}
                         onMouseUp={endDraw}
@@ -283,14 +292,14 @@ export default function TractorInspection() {
                         onTouchMove={draw}
                         onTouchEnd={endDraw}
                     />
-                    <p className="text-text-muted text-xs mt-1">
+                    <p className="text-text-tertiary text-ios-caption1 mt-1">
                         {settings.driverName || 'Driver'} • {formatDateTime(new Date())}
                     </p>
                 </div>
 
                 <button
                     onClick={handleSubmit}
-                    className="w-full bg-accent-green text-black py-4 rounded-xl font-bold text-lg min-h-touch-lg mb-8 transition-smooth active:scale-[0.98]"
+                    className="w-full bg-accent-blue text-white py-4 rounded-ios font-bold text-ios-body min-h-touch-lg mb-8 press-effect"
                 >
                     Submit Inspection
                 </button>

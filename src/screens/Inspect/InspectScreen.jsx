@@ -16,7 +16,7 @@ export default function InspectScreen() {
             title: 'Chassis / Intermodal Equipment',
             subtitle: '§396.11(b) + §390.42',
             path: '/inspect/chassis',
-            color: 'bg-accent-yellow',
+            color: 'bg-accent-orange',
         },
         {
             icon: '📦',
@@ -28,24 +28,26 @@ export default function InspectScreen() {
     ];
 
     return (
-        <div className="screen-scroll px-4 pt-4 pb-safe">
-            <h1 className="text-xl-touch font-bold mb-6">Inspections</h1>
-            <div className="space-y-4">
-                {types.map((t) => (
-                    <button
-                        key={t.path}
-                        onClick={() => navigate(t.path)}
-                        className="w-full bg-surface-card rounded-2xl p-5 text-left flex items-center gap-4 transition-smooth active:scale-[0.98]"
-                    >
-                        <div className={`${t.color} w-14 h-14 rounded-xl flex items-center justify-center text-2xl shrink-0`}>
-                            {t.icon}
-                        </div>
-                        <div>
-                            <p className="font-bold text-touch">{t.title}</p>
-                            <p className="text-text-muted text-sm">{t.subtitle}</p>
-                        </div>
-                        <span className="ml-auto text-text-muted text-xl">→</span>
-                    </button>
+        <div className="screen-scroll px-4 pt-6 pb-safe">
+            <h1 className="text-ios-large-title font-bold mb-6">Inspections</h1>
+            <div className="ios-card">
+                {types.map((t, idx) => (
+                    <div key={t.path}>
+                        {idx > 0 && <div className="ios-separator" />}
+                        <button
+                            onClick={() => navigate(t.path)}
+                            className="w-full ios-row press-effect"
+                        >
+                            <div className={`ios-row-icon ${t.color} text-white`}>
+                                {t.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-ios-body">{t.title}</p>
+                                <p className="text-text-tertiary text-ios-caption1">{t.subtitle}</p>
+                            </div>
+                            <span className="text-text-tertiary text-lg">›</span>
+                        </button>
+                    </div>
                 ))}
             </div>
         </div>

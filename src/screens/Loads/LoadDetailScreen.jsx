@@ -43,7 +43,6 @@ export default function LoadDetailScreen() {
         }
     }
 
-    // Update detention timer
     useEffect(() => {
         if (!activeDetention) return;
         const update = () => {
@@ -101,7 +100,7 @@ export default function LoadDetailScreen() {
     if (!load) {
         return (
             <div className="screen-scroll flex items-center justify-center">
-                <p className="text-text-muted">Loading...</p>
+                <p className="text-text-tertiary text-ios-body">Loading...</p>
             </div>
         );
     }
@@ -110,25 +109,29 @@ export default function LoadDetailScreen() {
     const totalCosts = receipts.reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const profit = load.rate ? Number(load.rate) - totalCosts : null;
 
+    const inputClass = "ios-input text-ios-body";
+
     return (
         <div className="screen-scroll pb-safe">
-            {/* Header */}
-            <div className="px-4 pt-4 pb-3 bg-surface-card">
+            {/* iOS-style Header */}
+            <div className="px-4 pt-4 pb-3 bg-ios-card">
                 <div className="flex items-center gap-3 mb-3">
                     <button
                         onClick={() => navigate(-1)}
-                        className="min-h-touch min-w-touch flex items-center justify-center text-xl"
+                        className="min-h-touch min-w-touch flex items-center justify-center text-accent-blue text-ios-body press-effect"
                     >
-                        ←
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 2L2 10L10 18" />
+                        </svg>
                     </button>
                     <div className="flex-1">
-                        <h1 className="text-2xl-touch font-bold">
+                        <h1 className="text-ios-title2 font-bold">
                             {formatContainerNumber(load.containerNumber) || 'Load Detail'}
                         </h1>
                     </div>
                     <button
                         onClick={() => setShowStatusPicker(!showStatusPicker)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-bold status-${load.status.toLowerCase().replace(/\s+/g, '-')}`}
+                        className={`px-3 py-1.5 rounded-full text-ios-caption1 font-bold status-${load.status.toLowerCase().replace(/\s+/g, '-')} press-effect`}
                     >
                         {load.status} ▾
                     </button>
@@ -143,11 +146,11 @@ export default function LoadDetailScreen() {
                             return (
                                 <div key={s} className="flex items-center">
                                     {i > 0 && (
-                                        <div className={`w-4 h-0.5 ${isCompleted ? 'bg-accent-green' : 'bg-border'}`} />
+                                        <div className={`w-4 h-0.5 ${isCompleted ? 'bg-accent-blue' : 'bg-ios-separator'}`} />
                                     )}
                                     <div
-                                        className={`w-3 h-3 rounded-full shrink-0 ${isCurrent ? 'bg-accent-green ring-2 ring-accent-green/30' :
-                                                isCompleted ? 'bg-accent-green' : 'bg-border'
+                                        className={`w-3 h-3 rounded-full shrink-0 ${isCurrent ? 'bg-accent-blue ring-2 ring-accent-blue/30' :
+                                            isCompleted ? 'bg-accent-blue' : 'bg-ios-separator'
                                             }`}
                                         title={s}
                                     />
@@ -161,7 +164,7 @@ export default function LoadDetailScreen() {
                             return (
                                 <div key={s} className="flex items-center">
                                     {i > 0 && <div className="w-4" />}
-                                    <span className={`text-[8px] whitespace-nowrap ${isCurrent ? 'text-accent-green font-bold' : 'text-text-muted'}`}>
+                                    <span className={`text-[8px] whitespace-nowrap ${isCurrent ? 'text-accent-blue font-bold' : 'text-text-tertiary'}`}>
                                         {s.replace('En Route to ', '').substring(0, 8)}
                                     </span>
                                 </div>
@@ -171,68 +174,68 @@ export default function LoadDetailScreen() {
                 </div>
             </div>
 
-            {/* Status Picker Modal */}
+            {/* Status Picker — iOS Bottom Sheet */}
             {showStatusPicker && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex items-end">
-                    <div className="bg-surface-card w-full rounded-t-2xl p-4 max-h-[70vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold">Change Status</h3>
-                            <button onClick={() => setShowStatusPicker(false)} className="text-text-muted text-xl min-h-touch min-w-touch flex items-center justify-center">✕</button>
+                <div className="ios-sheet-backdrop" onClick={() => setShowStatusPicker(false)}>
+                    <div className="ios-sheet" onClick={e => e.stopPropagation()}>
+                        <div className="ios-sheet-handle" />
+                        <div className="px-4 pb-6">
+                            <h3 className="text-ios-title3 font-bold mb-4">Change Status</h3>
+                            {LOAD_STATUSES.map((s, i) => (
+                                <button
+                                    key={s}
+                                    onClick={() => handleStatusAdvance(s)}
+                                    className={`w-full text-left py-3 px-4 rounded-ios mb-2 min-h-touch press-effect text-ios-body ${s === load.status
+                                        ? 'bg-accent-blue-dim text-accent-blue font-bold'
+                                        : 'bg-ios-elevated text-white'
+                                        }`}
+                                >
+                                    {i < currentIdx ? '✓ ' : ''}{s}
+                                </button>
+                            ))}
                         </div>
-                        {LOAD_STATUSES.map((s, i) => (
-                            <button
-                                key={s}
-                                onClick={() => handleStatusAdvance(s)}
-                                className={`w-full text-left py-3 px-4 rounded-xl mb-2 min-h-touch transition-smooth ${s === load.status
-                                        ? 'bg-accent-green/20 text-accent-green font-bold'
-                                        : 'bg-surface-elevated text-white'
-                                    }`}
-                            >
-                                {i < currentIdx ? '✓ ' : ''}{s}
-                            </button>
-                        ))}
                     </div>
                 </div>
             )}
 
             <div className="px-4 pt-4 space-y-4">
                 {/* Info Section */}
-                <div className="bg-surface-card rounded-2xl p-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Load Info</h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="ios-card p-4">
+                    <p className="ios-section-header !px-0 !pt-0">Load Info</p>
+                    <div className="grid grid-cols-2 gap-3 text-ios-footnote">
                         <div>
-                            <span className="text-text-muted text-xs">Move Type</span>
+                            <span className="text-text-tertiary text-ios-caption1">Move Type</span>
                             <p className="font-medium">{load.moveType}</p>
                         </div>
                         <div>
-                            <span className="text-text-muted text-xs">Size</span>
+                            <span className="text-text-tertiary text-ios-caption1">Size</span>
                             <p className="font-medium">{load.containerSize}</p>
                         </div>
                         <div>
-                            <span className="text-text-muted text-xs">Booking #</span>
+                            <span className="text-text-tertiary text-ios-caption1">Booking #</span>
                             <p className="font-medium">{load.bookingNumber || '—'}</p>
                         </div>
                         <div>
-                            <span className="text-text-muted text-xs">Seal #</span>
+                            <span className="text-text-tertiary text-ios-caption1">Seal #</span>
                             <p className="font-medium">{load.sealNumber || '—'}</p>
                         </div>
                         <div className="col-span-2">
-                            <span className="text-text-muted text-xs">Pickup</span>
+                            <span className="text-text-tertiary text-ios-caption1">Pickup</span>
                             <p className="font-medium">{load.pickupTerminal || '—'}</p>
-                            {load.pickupAppointment && <p className="text-text-secondary text-xs">{formatDateTime(load.pickupAppointment)}</p>}
+                            {load.pickupAppointment && <p className="text-text-secondary text-ios-caption1">{formatDateTime(load.pickupAppointment)}</p>}
                         </div>
                         <div className="col-span-2">
-                            <span className="text-text-muted text-xs">Delivery</span>
+                            <span className="text-text-tertiary text-ios-caption1">Delivery</span>
                             <p className="font-medium">{load.deliveryAddress || '—'}</p>
-                            {load.deliveryAppointment && <p className="text-text-secondary text-xs">{formatDateTime(load.deliveryAppointment)}</p>}
+                            {load.deliveryAppointment && <p className="text-text-secondary text-ios-caption1">{formatDateTime(load.deliveryAppointment)}</p>}
                         </div>
                         <div>
-                            <span className="text-text-muted text-xs">Customer</span>
+                            <span className="text-text-tertiary text-ios-caption1">Customer</span>
                             <p className="font-medium">{load.customerBroker || '—'}</p>
                         </div>
                         {load.rate && (
                             <div>
-                                <span className="text-text-muted text-xs">Rate</span>
+                                <span className="text-text-tertiary text-ios-caption1">Rate</span>
                                 <p className="font-bold text-accent-green">{formatCurrency(load.rate)}</p>
                             </div>
                         )}
@@ -240,16 +243,16 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Documents Section */}
-                <div className="bg-surface-card rounded-2xl p-4">
+                <div className="ios-card p-4">
                     <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-text-secondary">Documents</h3>
-                        <span className="text-text-muted text-xs">{photos.length} items</span>
+                        <p className="ios-section-header !px-0 !pt-0 !pb-0">Documents</p>
+                        <span className="text-text-tertiary text-ios-caption1">{photos.length} items</span>
                     </div>
 
                     {photos.length > 0 && (
                         <div className="photo-grid mb-3">
                             {photos.map((p) => (
-                                <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden bg-surface-elevated">
+                                <div key={p.id} className="relative aspect-square overflow-hidden bg-ios-elevated">
                                     <img src={p.data} alt="" className="w-full h-full object-cover" />
                                     <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] text-center py-0.5 truncate px-1">
                                         {p.type}
@@ -263,7 +266,7 @@ export default function LoadDetailScreen() {
                         <select
                             value={photoType}
                             onChange={(e) => setPhotoType(e.target.value)}
-                            className="flex-1 bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border"
+                            className="flex-1 ios-input text-ios-footnote"
                         >
                             {DOCUMENT_TYPES.map((t) => (
                                 <option key={t.key} value={t.label}>{t.icon} {t.label}</option>
@@ -271,7 +274,7 @@ export default function LoadDetailScreen() {
                         </select>
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="bg-accent-blue px-4 py-2 rounded-lg text-sm font-semibold min-h-touch transition-smooth active:scale-95"
+                            className="bg-accent-blue px-4 py-2 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect"
                         >
                             📸 Add
                         </button>
@@ -287,24 +290,24 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Detention Tracker */}
-                <div className="bg-surface-card rounded-2xl p-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Detention Tracker</h3>
+                <div className="ios-card p-4">
+                    <p className="ios-section-header !px-0 !pt-0">Detention Tracker</p>
                     {activeDetention ? (
                         <div>
                             <div className="text-center mb-3">
-                                <p className="text-3xl-touch font-bold text-accent-red">{detentionTime}</p>
-                                <p className="text-text-muted text-sm">
+                                <p className="text-ios-large-title font-bold text-accent-red">{detentionTime}</p>
+                                <p className="text-text-tertiary text-ios-caption1">
                                     Started {formatTime(activeDetention.startTime)}
                                 </p>
                                 {activeDetention.gpsLat && (
-                                    <p className="text-text-muted text-xs mt-1">
+                                    <p className="text-text-tertiary text-ios-caption2 mt-1">
                                         📍 {activeDetention.gpsLat.toFixed(4)}, {activeDetention.gpsLng.toFixed(4)}
                                     </p>
                                 )}
                             </div>
                             <button
                                 onClick={handleDetentionStop}
-                                className="w-full bg-accent-red py-3 rounded-xl font-bold min-h-touch transition-smooth active:scale-[0.98]"
+                                className="w-full bg-accent-red py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect"
                             >
                                 ⏹ Stop Detention
                             </button>
@@ -312,17 +315,17 @@ export default function LoadDetailScreen() {
                     ) : (
                         <button
                             onClick={handleDetentionStart}
-                            className="w-full bg-accent-yellow text-black py-3 rounded-xl font-bold min-h-touch transition-smooth active:scale-[0.98]"
+                            className="w-full bg-accent-orange text-black py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect"
                         >
                             ⏱️ Start Detention
                         </button>
                     )}
 
                     {detentions.filter(d => d.status === 'stopped').length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-text-muted text-xs mb-2">Previous Detention</p>
+                        <div className="mt-3 pt-3 border-t border-ios-separator">
+                            <p className="text-text-tertiary text-ios-caption1 mb-2">Previous Detention</p>
                             {detentions.filter(d => d.status === 'stopped').map((d) => (
-                                <div key={d.id} className="flex justify-between text-sm py-1">
+                                <div key={d.id} className="flex justify-between text-ios-footnote py-1">
                                     <span className="text-text-secondary">{formatTime(d.startTime)} — {formatTime(d.endTime)}</span>
                                     <span className="font-medium">{formatDuration(new Date(d.endTime) - new Date(d.startTime))}</span>
                                 </div>
@@ -332,11 +335,11 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Chassis Section */}
-                <div className="bg-surface-card rounded-2xl p-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Chassis</h3>
+                <div className="ios-card p-4">
+                    <p className="ios-section-header !px-0 !pt-0">Chassis</p>
                     <div className="space-y-3">
                         <div>
-                            <label className="text-text-muted text-xs">Chassis #</label>
+                            <label className="text-text-tertiary text-ios-caption1">Chassis #</label>
                             <input
                                 type="text"
                                 value={load.chassisNumber || ''}
@@ -344,18 +347,18 @@ export default function LoadDetailScreen() {
                                     await updateLoad(id, { chassisNumber: e.target.value });
                                     setLoad({ ...load, chassisNumber: e.target.value });
                                 }}
-                                className="w-full bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border mt-1"
+                                className={`${inputClass} mt-1`}
                             />
                         </div>
                         <div>
-                            <label className="text-text-muted text-xs">Provider</label>
+                            <label className="text-text-tertiary text-ios-caption1">Provider</label>
                             <select
                                 value={load.chassisProvider || ''}
                                 onChange={async (e) => {
                                     await updateLoad(id, { chassisProvider: e.target.value });
                                     setLoad({ ...load, chassisProvider: e.target.value });
                                 }}
-                                className="w-full bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border mt-1"
+                                className={`${inputClass} mt-1`}
                             >
                                 <option value="">Select</option>
                                 {CHASSIS_PROVIDERS.map((p) => (
@@ -367,10 +370,10 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Notes Section */}
-                <div className="bg-surface-card rounded-2xl p-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Notes</h3>
+                <div className="ios-card p-4">
+                    <p className="ios-section-header !px-0 !pt-0">Notes</p>
                     {load.notes && (
-                        <pre className="text-sm text-text-secondary whitespace-pre-wrap font-sans mb-3 bg-surface-elevated rounded-lg p-3">
+                        <pre className="text-ios-footnote text-text-secondary whitespace-pre-wrap font-sans mb-3 bg-ios-elevated rounded-ios p-3">
                             {load.notes}
                         </pre>
                     )}
@@ -380,12 +383,12 @@ export default function LoadDetailScreen() {
                             value={newNote}
                             onChange={(e) => setNewNote(e.target.value)}
                             placeholder="Add a note..."
-                            className="flex-1 bg-surface-input text-white rounded-lg px-3 py-2 text-sm border border-border"
+                            className={`flex-1 ${inputClass}`}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
                         />
                         <button
                             onClick={handleAddNote}
-                            className="bg-accent-blue px-4 py-2 rounded-lg text-sm font-semibold min-h-touch transition-smooth active:scale-95"
+                            className="bg-accent-blue px-4 py-2 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect"
                         >
                             Add
                         </button>
@@ -393,26 +396,26 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Cost Section */}
-                <div className="bg-surface-card rounded-2xl p-4 mb-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Costs</h3>
+                <div className="ios-card p-4 mb-4">
+                    <p className="ios-section-header !px-0 !pt-0">Costs</p>
                     {receipts.length === 0 ? (
-                        <p className="text-text-muted text-sm">No receipts attached</p>
+                        <p className="text-text-tertiary text-ios-footnote">No receipts attached</p>
                     ) : (
                         <div className="space-y-2">
                             {receipts.map((r) => (
-                                <div key={r.id} className="flex items-center justify-between text-sm">
+                                <div key={r.id} className="flex items-center justify-between text-ios-footnote">
                                     <span className="text-text-secondary">{r.category}</span>
                                     <span className="font-medium">{formatCurrency(r.amount)}</span>
                                 </div>
                             ))}
-                            <div className="border-t border-border pt-2 flex items-center justify-between">
-                                <span className="font-semibold">Total Costs</span>
-                                <span className="font-bold text-accent-red">{formatCurrency(totalCosts)}</span>
+                            <div className="border-t border-ios-separator pt-2 flex items-center justify-between">
+                                <span className="font-semibold text-ios-body">Total Costs</span>
+                                <span className="font-bold text-accent-red text-ios-body">{formatCurrency(totalCosts)}</span>
                             </div>
                             {profit !== null && (
                                 <div className="flex items-center justify-between">
-                                    <span className="font-semibold">Est. Profit</span>
-                                    <span className={`font-bold ${profit >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                    <span className="font-semibold text-ios-body">Est. Profit</span>
+                                    <span className={`font-bold text-ios-body ${profit >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                                         {formatCurrency(profit)}
                                     </span>
                                 </div>
@@ -422,19 +425,19 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Status History */}
-                <div className="bg-surface-card rounded-2xl p-4 mb-4">
-                    <h3 className="text-sm font-semibold text-text-secondary mb-3">Status History</h3>
+                <div className="ios-card p-4 mb-4">
+                    <p className="ios-section-header !px-0 !pt-0">Status History</p>
                     {statusHistory.length === 0 ? (
-                        <p className="text-text-muted text-sm">No status changes yet</p>
+                        <p className="text-text-tertiary text-ios-footnote">No status changes yet</p>
                     ) : (
                         <div className="space-y-2">
                             {statusHistory.map((s) => (
-                                <div key={s.id} className="flex items-center justify-between text-sm">
+                                <div key={s.id} className="flex items-center justify-between text-ios-footnote">
                                     <span className="text-text-secondary">{s.status}</span>
                                     <div className="text-right">
-                                        <span className="text-text-muted text-xs">{formatDateTime(s.createdAt)}</span>
+                                        <span className="text-text-tertiary text-ios-caption1">{formatDateTime(s.createdAt)}</span>
                                         {s.gpsLat && (
-                                            <p className="text-text-muted text-[10px]">📍 {s.gpsLat.toFixed(4)}, {s.gpsLng.toFixed(4)}</p>
+                                            <p className="text-text-tertiary text-ios-caption2">📍 {s.gpsLat.toFixed(4)}, {s.gpsLng.toFixed(4)}</p>
                                         )}
                                     </div>
                                 </div>

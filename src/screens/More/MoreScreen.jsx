@@ -3,37 +3,62 @@ import { useNavigate } from 'react-router-dom';
 export default function MoreScreen() {
     const navigate = useNavigate();
 
-    const menuItems = [
-        { icon: '👤', label: 'My Profile / Settings', path: '/more/profile' },
-        { icon: '🏗️', label: 'My Terminals', path: '/more/terminals' },
-        { icon: '🪪', label: 'My Credentials', path: '/more/credentials' },
-        { icon: '📁', label: 'Document History', path: '/more/documents' },
-        { icon: '📊', label: 'Load History', path: '/more/load-history' },
-        { icon: '🧾', label: 'Receipts Summary', path: '/more/receipts' },
+    const sections = [
+        {
+            title: 'Account',
+            items: [
+                { icon: '👤', label: 'My Profile / Settings', path: '/more/profile', color: 'bg-accent-blue' },
+            ],
+        },
+        {
+            title: 'Data',
+            items: [
+                { icon: '🏗️', label: 'My Terminals', path: '/more/terminals', color: 'bg-accent-orange' },
+                { icon: '🪪', label: 'My Credentials', path: '/more/credentials', color: 'bg-accent-green' },
+            ],
+        },
+        {
+            title: 'History',
+            items: [
+                { icon: '📁', label: 'Document History', path: '/more/documents', color: 'bg-accent-indigo' },
+                { icon: '📊', label: 'Load History', path: '/more/load-history', color: 'bg-accent-purple' },
+                { icon: '🧾', label: 'Receipts Summary', path: '/more/receipts', color: 'bg-accent-teal' },
+            ],
+        },
     ];
 
     return (
-        <div className="screen-scroll px-4 pt-4 pb-safe">
-            <h1 className="text-xl-touch font-bold mb-6">More</h1>
-            <div className="space-y-2">
-                {menuItems.map((item) => (
-                    <button
-                        key={item.path}
-                        onClick={() => navigate(item.path)}
-                        className="w-full bg-surface-card rounded-2xl p-4 flex items-center gap-4 transition-smooth active:scale-[0.98]"
-                    >
-                        <span className="text-2xl">{item.icon}</span>
-                        <span className="font-medium text-touch">{item.label}</span>
-                        <span className="ml-auto text-text-muted">→</span>
-                    </button>
-                ))}
+        <div className="screen-scroll pt-6 pb-safe">
+            <div className="px-4 mb-2">
+                <h1 className="text-ios-large-title font-bold">More</h1>
             </div>
 
-            <div className="mt-8 text-center">
-                <p className="text-text-muted text-xs">DrayDriver v1.0.0</p>
-                <p className="text-text-muted text-xs mt-1">Offline-first • All data stored locally</p>
-                {/* TODO: Multi-driver support — login + user accounts */}
-                {/* TODO: Stripe subscription check */}
+            {sections.map((section) => (
+                <div key={section.title}>
+                    <p className="ios-section-header">{section.title}</p>
+                    <div className="ios-card-inset">
+                        {section.items.map((item, idx) => (
+                            <div key={item.path}>
+                                {idx > 0 && <div className="ios-separator" />}
+                                <button
+                                    onClick={() => navigate(item.path)}
+                                    className="w-full ios-row press-effect"
+                                >
+                                    <div className={`ios-row-icon ${item.color} text-white`}>
+                                        {item.icon}
+                                    </div>
+                                    <span className="flex-1 font-medium text-ios-body text-left">{item.label}</span>
+                                    <span className="text-text-tertiary text-lg">›</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            <div className="mt-8 mb-4 text-center">
+                <p className="text-text-tertiary text-ios-caption1">DrayDriver v1.0.0</p>
+                <p className="text-text-tertiary text-ios-caption2 mt-1">Offline-first • All data stored locally</p>
             </div>
         </div>
     );
