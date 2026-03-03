@@ -28,7 +28,7 @@ body,
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 90px;
+  overscroll-behavior-y: contain;
 }
 
 /* ─── Touch-friendly inputs ─── */
@@ -302,9 +302,13 @@ textarea {
   scrollbar-width: none;
 }
 
-/* ─── Safe area bottom ─── */
+/* ─── Safe area spacing ─── */
 .pb-safe {
-  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* ─── Loading shimmer ─── */
@@ -353,13 +357,35 @@ textarea {
 
 /* ─── Smooth animations ─── */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -368,6 +394,10 @@ textarea {
 
 .animate-slide-up {
   animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.animate-page-enter {
+  animation: page-enter 0.25s ease-out;
 }
 
 /* ─── Swipe hint ─── */

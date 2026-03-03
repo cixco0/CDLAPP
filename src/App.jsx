@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomeScreen from './screens/Home/HomeScreen';
 import ShiftDetailScreen from './screens/Home/ShiftDetailScreen';
@@ -24,29 +24,33 @@ import ReceiptsSummary from './screens/More/ReceiptsSummary';
 // TODO: Stripe subscription check — gate features behind paid plan
 
 export default function App() {
+    const location = useLocation();
+
     return (
         <Layout>
-            <Routes>
-                <Route path="/" element={<HomeScreen />} />
-                <Route path="/shift/:date" element={<ShiftDetailScreen />} />
-                <Route path="/loads" element={<LoadsScreen />} />
-                <Route path="/loads/new" element={<AddLoadScreen />} />
-                <Route path="/loads/:id" element={<LoadDetailScreen />} />
-                <Route path="/capture" element={<CaptureScreen />} />
-                <Route path="/receipt/:id" element={<ReceiptDetailScreen />} />
-                <Route path="/inspect" element={<InspectScreen />} />
-                <Route path="/inspect/tractor" element={<TractorInspection />} />
-                <Route path="/inspect/chassis" element={<ChassisInspection />} />
-                <Route path="/inspect/container" element={<ContainerInspection />} />
-                <Route path="/inspect/detail/:id" element={<InspectionDetailScreen />} />
-                <Route path="/more" element={<MoreScreen />} />
-                <Route path="/more/profile" element={<ProfileSettings />} />
-                <Route path="/more/terminals" element={<TerminalsManager />} />
-                <Route path="/more/credentials" element={<CredentialsTracker />} />
-                <Route path="/more/documents" element={<DocumentHistory />} />
-                <Route path="/more/load-history" element={<LoadHistory />} />
-                <Route path="/more/receipts" element={<ReceiptsSummary />} />
-            </Routes>
+            <div key={location.pathname} className="animate-page-enter h-full">
+                <Routes location={location}>
+                    <Route path="/" element={<HomeScreen />} />
+                    <Route path="/shift/:date" element={<ShiftDetailScreen />} />
+                    <Route path="/loads" element={<LoadsScreen />} />
+                    <Route path="/loads/new" element={<AddLoadScreen />} />
+                    <Route path="/loads/:id" element={<LoadDetailScreen />} />
+                    <Route path="/capture" element={<CaptureScreen />} />
+                    <Route path="/receipt/:id" element={<ReceiptDetailScreen />} />
+                    <Route path="/inspect" element={<InspectScreen />} />
+                    <Route path="/inspect/tractor" element={<TractorInspection />} />
+                    <Route path="/inspect/chassis" element={<ChassisInspection />} />
+                    <Route path="/inspect/container" element={<ContainerInspection />} />
+                    <Route path="/inspect/detail/:id" element={<InspectionDetailScreen />} />
+                    <Route path="/more" element={<MoreScreen />} />
+                    <Route path="/more/profile" element={<ProfileSettings />} />
+                    <Route path="/more/terminals" element={<TerminalsManager />} />
+                    <Route path="/more/credentials" element={<CredentialsTracker />} />
+                    <Route path="/more/documents" element={<DocumentHistory />} />
+                    <Route path="/more/load-history" element={<LoadHistory />} />
+                    <Route path="/more/receipts" element={<ReceiptsSummary />} />
+                </Routes>
+            </div>
         </Layout>
     );
 }

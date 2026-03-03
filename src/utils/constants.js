@@ -9,19 +9,83 @@ export const MOVE_TYPES = [
     'Empty Return',
 ];
 
-export const LOAD_STATUSES = [
-    'Assigned',
-    'Accepted',
-    'En Route to Terminal',
-    'At Terminal Gate',
-    'Container Loaded',
-    'In Transit',
-    'At Delivery',
-    'Unloading',
-    'Delivered',
-    'Empty Return',
-    'Completed',
-];
+export const LOAD_STATUS_FLOWS = {
+    'Import': [
+        'Assigned',
+        'Accepted',
+        'En Route to Terminal',
+        'At Terminal Gate',
+        'Container Loaded',
+        'In Transit',
+        'At Delivery',
+        'Unloading',
+        'Delivered',
+        'Empty Return',
+        'Completed',
+    ],
+    'Export': [
+        'Assigned',
+        'Accepted',
+        'En Route to Pickup',
+        'At Shipper',
+        'Loading',
+        'Container Loaded',
+        'In Transit to Terminal',
+        'At Terminal Gate',
+        'Container Dropped',
+        'Completed',
+    ],
+    'Rail Dray': [
+        'Assigned',
+        'Accepted',
+        'En Route to Ramp',
+        'At Rail Ramp',
+        'Container Loaded',
+        'In Transit',
+        'At Delivery',
+        'Unloading',
+        'Delivered',
+        'Empty Return',
+        'Completed',
+    ],
+    'Street Turn': [
+        'Assigned',
+        'Accepted',
+        'En Route to Pickup',
+        'At Pickup Location',
+        'Container Loaded',
+        'In Transit',
+        'At Drop-off',
+        'Container Dropped',
+        'Completed',
+    ],
+    'Repo': [
+        'Assigned',
+        'Accepted',
+        'En Route to Pickup',
+        'Container Picked Up',
+        'In Transit',
+        'At Drop-off',
+        'Container Dropped',
+        'Completed',
+    ],
+    'Empty Return': [
+        'Assigned',
+        'Accepted',
+        'En Route to Terminal',
+        'At Terminal Gate',
+        'Container Dropped',
+        'Completed',
+    ],
+};
+
+// Helper to get status flow for a given move type (falls back to Import)
+export function getStatusesForMoveType(moveType) {
+    return LOAD_STATUS_FLOWS[moveType] || LOAD_STATUS_FLOWS['Import'];
+}
+
+// Backwards-compatible flat list (union of all unique statuses)
+export const LOAD_STATUSES = [...new Set(Object.values(LOAD_STATUS_FLOWS).flat())];
 
 export const DRIVER_STATUSES = ['Off Duty', 'On Duty', 'On Load'];
 

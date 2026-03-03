@@ -5,7 +5,7 @@ import { getPhotosByLoad, savePhoto } from '../../services/photoService';
 import { getReceiptsByLoad } from '../../services/receiptService';
 import { startDetention, stopDetention, getDetentionByLoad } from '../../services/detentionService';
 import { formatContainerNumber, formatTime, formatDateTime, formatCurrency, formatDuration } from '../../utils/formatters';
-import { LOAD_STATUSES, CHASSIS_PROVIDERS, DOCUMENT_TYPES } from '../../utils/constants';
+import { getStatusesForMoveType, CHASSIS_PROVIDERS, DOCUMENT_TYPES } from '../../utils/constants';
 
 export default function LoadDetailScreen() {
     const { id } = useParams();
@@ -107,7 +107,8 @@ export default function LoadDetailScreen() {
         );
     }
 
-    const currentIdx = LOAD_STATUSES.indexOf(load.status);
+    const statuses = getStatusesForMoveType(load.moveType);
+    const currentIdx = statuses.indexOf(load.status);
     const totalCosts = receipts.reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const profit = load.rate ? Number(load.rate) - totalCosts : null;
 
@@ -142,11 +143,11 @@ export default function LoadDetailScreen() {
                         <div className="flex-1 h-2 bg-ios-separator rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-accent-blue rounded-full transition-all duration-300"
-                                style={{ width: `${((currentIdx + 1) / LOAD_STATUSES.length) * 100}%` }}
+                                style={{ width: `${((currentIdx + 1) / statuses.length) * 100}%` }}
                             />
                         </div>
                         <span className="text-text-tertiary text-ios-caption1 shrink-0">
-                            {currentIdx + 1}/{LOAD_STATUSES.length}
+                            {currentIdx + 1}/{statuses.length}
                         </span>
                     </div>
                     <div className="flex items-center justify-between mt-1.5">
@@ -178,28 +179,26 @@ export default function LoadDetailScreen() {
                                 </button>
                             </div>
                             <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pb-4">
-                                {LOAD_STATUSES.map((s, i) => {
+                                {statuses.map((s, i) => {
                                     const isCompleted = i < currentIdx;
                                     const isCurrent = s === load.status;
                                     return (
                                         <button
                                             key={s}
                                             onClick={() => handleStatusAdvance(s)}
-                                            className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all press-effect ${
-                                                isCurrent
-                                                    ? 'bg-accent-blue text-white'
-                                                    : isCompleted
+                                            className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all press-effect ${isCurrent
+                                                ? 'bg-accent-blue text-white'
+                                                : isCompleted
                                                     ? 'bg-ios-elevated/50 text-text-secondary'
                                                     : 'bg-ios-elevated text-white'
-                                            }`}
+                                                }`}
                                         >
-                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                                isCurrent
-                                                    ? 'bg-white text-accent-blue'
-                                                    : isCompleted
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCurrent
+                                                ? 'bg-white text-accent-blue'
+                                                : isCompleted
                                                     ? 'bg-accent-green text-white'
                                                     : 'bg-ios-separator text-text-tertiary'
-                                            }`}>
+                                                }`}>
                                                 {isCompleted ? '✓' : i + 1}
                                             </div>
                                             <span className={`text-ios-body ${isCurrent ? 'font-bold' : ''}`}>
@@ -218,10 +217,10 @@ export default function LoadDetailScreen() {
             {viewingPhoto && (
                 <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
                     {/* Header - fixed at top */}
-                    <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/90 backdrop-blur-sm">
+                    <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/90 backdrop-blur-sm" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)' }}>
                         <button
                             onClick={() => setViewingPhoto(null)}
-                            className="text-accent-blue text-ios-body font-medium press-effect"
+                            className="text-accent-blue text-ios-body font-medium press-effect min-h-touch"
                         >
                             Done
                         </button>

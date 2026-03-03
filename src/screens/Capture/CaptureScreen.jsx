@@ -151,21 +151,21 @@ export default function CaptureScreen() {
 
             {/* Full-screen receipt/photo detail */}
             {capturedImage && (
-                <div className="fixed inset-0 z-50 bg-black">
-                    {/* Sticky header */}
-                    <div className="sticky top-0 z-10 glass-header px-4 py-3 flex items-center justify-between">
-                        <button onClick={resetForm} className="text-accent-blue text-ios-body font-medium press-effect">Cancel</button>
+                <div className="fixed inset-0 z-50 bg-black flex flex-col">
+                    {/* Sticky header — respects safe area */}
+                    <div className="shrink-0 glass-header px-4 py-3 flex items-center justify-between pt-safe" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)' }}>
+                        <button onClick={resetForm} className="text-accent-blue text-ios-body font-medium press-effect min-h-touch min-w-touch flex items-center">Cancel</button>
                         <p className="text-ios-headline font-bold">{mode === 'receipt' ? 'Scan Receipt' : 'Save Photo'}</p>
                         <button
                             onClick={mode === 'receipt' ? handleSaveReceipt : handleSavePhoto}
                             disabled={ocrScanning}
-                            className={`text-ios-body font-bold press-effect ${ocrScanning ? 'text-text-tertiary' : 'text-accent-blue'}`}
+                            className={`text-ios-body font-bold press-effect min-h-touch min-w-touch flex items-center justify-end ${ocrScanning ? 'text-text-tertiary' : 'text-accent-blue'}`}
                         >Save</button>
                     </div>
 
                     {/* Scrollable content */}
-                    <div className="overflow-y-auto" style={{ height: 'calc(100vh - 52px)' }}>
-                        <div className="px-4 pb-10">
+                    <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="px-4 pb-16">
 
                             {/* Receipt image — big and clear */}
                             <div className="my-4 rounded-ios-lg overflow-hidden">
