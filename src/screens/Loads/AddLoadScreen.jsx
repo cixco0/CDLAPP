@@ -105,6 +105,15 @@ export default function AddLoadScreen() {
                         </div>
                     </div>
 
+                    {form.moveType.includes('Prepull') && (
+                        <div className="bg-accent-purple/10 rounded-ios p-3 border border-accent-purple/30">
+                            <p className="text-accent-purple text-ios-footnote font-semibold">Prepull Selected</p>
+                            <p className="text-text-secondary text-ios-caption1 mt-1">
+                                This is a prepull - you'll pick up the container and drop it at a yard location, not deliver to final destination.
+                            </p>
+                        </div>
+                    )}
+
                     <div>
                         <label className={labelClass}>Chassis # (optional)</label>
                         <input type="text" value={form.chassisNumber} onChange={(e) => handleChange('chassisNumber', e.target.value)} placeholder="Filled when picked up" className={inputClass} />
@@ -124,12 +133,12 @@ export default function AddLoadScreen() {
                     </div>
 
                     <div>
-                        <label className={labelClass}>Delivery Address</label>
-                        <input type="text" value={form.deliveryAddress} onChange={(e) => handleChange('deliveryAddress', e.target.value)} placeholder="123 Main St, City, IL" className={inputClass} />
+                        <label className={labelClass}>{form.moveType.includes('Prepull') ? 'Drop Location (Yard)' : 'Delivery Address'}</label>
+                        <input type="text" value={form.deliveryAddress} onChange={(e) => handleChange('deliveryAddress', e.target.value)} placeholder={form.moveType.includes('Prepull') ? 'Yard location' : '123 Main St, City, IL'} className={inputClass} />
                     </div>
 
                     <div>
-                        <label className={labelClass}>Delivery Appointment</label>
+                        <label className={labelClass}>{form.moveType.includes('Prepull') ? 'Drop Appointment' : 'Delivery Appointment'}</label>
                         <input type="datetime-local" value={form.deliveryAppointment} onChange={(e) => handleChange('deliveryAppointment', e.target.value)} className={inputClass} />
                     </div>
 

@@ -226,11 +226,16 @@ export default function HomeScreen() {
                                     className="w-full px-4 py-3 text-left press-effect flex items-center justify-between"
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-0.5">
+                                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                             <span className="font-semibold text-ios-body">{load.containerNumber || 'No Container #'}</span>
                                             <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium status-${load.status === 'In Progress' ? 'in-progress' : load.status.toLowerCase().replace(/\s+/g, '-')}`}>
                                                 {load.status}
                                             </span>
+                                            {load.moveType?.includes('Prepull') && (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold move-prepull">
+                                                    PREPULL
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-text-secondary text-ios-footnote truncate">
                                             {load.pickupTerminal || 'Pickup'} → {load.deliveryAddress || 'Delivery'}

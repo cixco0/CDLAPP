@@ -304,11 +304,34 @@ textarea {
 
 /* ─── Safe area spacing ─── */
 .pb-safe {
-  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
 }
 
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ─── Fixed bottom button container ─── */
+.fixed-bottom-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(0,0,0,1) 70%, rgba(0,0,0,0));
+  z-index: 40;
+}
+
+/* ─── Move type badge colors ─── */
+.move-prepull {
+  background-color: rgba(175, 82, 222, 0.2);
+  color: #AF52DE;
+}
+
+.move-delivery {
+  background-color: rgba(48, 209, 88, 0.2);
+  color: #30D158;
 }
 
 /* ─── Loading shimmer ─── */

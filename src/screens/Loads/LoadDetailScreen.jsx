@@ -4,8 +4,9 @@ import { getLoad, updateLoad, advanceLoadStatus, getStatusChanges } from '../../
 import { getPhotosByLoad, savePhoto } from '../../services/photoService';
 import { getReceiptsByLoad } from '../../services/receiptService';
 import { startDetention, stopDetention, getDetentionByLoad } from '../../services/detentionService';
+import { getSetting } from '../../services/settingsService';
 import { formatContainerNumber, formatTime, formatDateTime, formatCurrency, formatDuration } from '../../utils/formatters';
-import { getStatusesForMoveType, CHASSIS_PROVIDERS, DOCUMENT_TYPES } from '../../utils/constants';
+import { getStatusesForMoveType, CHASSIS_PROVIDERS, DOCUMENT_TYPES, CONTAINER_SIZES, MOVE_TYPES } from '../../utils/constants';
 
 export default function LoadDetailScreen() {
     const { id } = useParams();
@@ -23,15 +24,25 @@ export default function LoadDetailScreen() {
     const [photoType, setPhotoType] = useState('General');
     const [showStatusPicker, setShowStatusPicker] = useState(false);
     const [viewingPhoto, setViewingPhoto] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({});
+    const [terminals, setTerminals] = useState([]);
 
     useEffect(() => {
         loadData();
+        loadTerminals();
     }, [id]);
+
+    async function loadTerminals() {
+        const t = await getSetting('terminals');
+        setTerminals(t || []);
+    }
 
     async function loadData() {
         const l = await getLoad(id);
         if (l) {
             setLoad(l);
+            setEditForm(l);
             const history = await getStatusChanges(id);
             setStatusHistory(history);
             const p = await getPhotosByLoad(id);
@@ -99,6 +110,31 @@ export default function LoadDetailScreen() {
         await loadData();
     }
 
+    function handleEditChange(field, value) {
+        if (field === 'containerNumber') {
+            value = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+        setEditForm(prev => ({ ...prev, [field]: value }));
+    }
+
+    async function handleSaveEdit() {
+        await updateLoad(id, {
+            containerNumber: editForm.containerNumber,
+            bookingNumber: editForm.bookingNumber,
+            sealNumber: editForm.sealNumber,
+            containerSize: editForm.containerSize,
+            moveType: editForm.moveType,
+            pickupTerminal: editForm.pickupTerminal,
+            pickupAppointment: editForm.pickupAppointment,
+            deliveryAddress: editForm.deliveryAddress,
+            deliveryAppointment: editForm.deliveryAppointment,
+            customerBroker: editForm.customerBroker,
+            rate: editForm.rate,
+        });
+        setShowEditModal(false);
+        await loadData();
+    }
+
     if (!load) {
         return (
             <div className="screen-scroll flex items-center justify-center">
@@ -111,8 +147,10 @@ export default function LoadDetailScreen() {
     const currentIdx = statuses.indexOf(load.status);
     const totalCosts = receipts.reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const profit = load.rate ? Number(load.rate) - totalCosts : null;
+    const isPrepull = load.moveType?.includes('Prepull');
 
     const inputClass = "ios-input text-ios-body";
+    const labelClass = "block text-text-secondary text-ios-footnote font-medium mb-1.5";
 
     return (
         <div className="screen-scroll pb-safe">
@@ -131,7 +169,21 @@ export default function LoadDetailScreen() {
                         <h1 className="text-ios-title2 font-bold">
                             {formatContainerNumber(load.containerNumber) || 'Load Detail'}
                         </h1>
+                        {isPrepull && (
+                            <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold move-prepull">
+                                PREPULL
+                            </span>
+                        )}
                     </div>
+                    <button
+                        onClick={() => {
+                            setEditForm(load);
+                            setShowEditModal(true);
+                        }}
+                        className="min-h-touch min-w-touch flex items-center justify-center text-accent-blue text-ios-body font-medium press-effect"
+                    >
+                        Edit
+                    </button>
                 </div>
 
                 {/* Status Progress Bar - Tap to change */}
@@ -152,12 +204,164 @@ export default function LoadDetailScreen() {
                     </div>
                     <div className="flex items-center justify-between mt-1.5">
                         <p className="text-accent-blue text-ios-body font-semibold">{load.status}</p>
-                        <span className="text-text-tertiary text-ios-caption1">Tap to update ›</span>
+                        <span className="text-text-tertiary text-ios-caption1">Tap to update</span>
                     </div>
                 </button>
             </div>
 
-            {/* Status Picker — iOS Bottom Sheet */}
+            {/* Edit Modal */}
+            {showEditModal && (
+                <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
+                    <div className="shrink-0 glass-header px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)' }}>
+                        <button
+                            onClick={() => setShowEditModal(false)}
+                            className="text-accent-blue text-ios-body font-medium press-effect min-h-touch"
+                        >
+                            Cancel
+                        </button>
+                        <p className="text-ios-headline font-bold">Edit Load</p>
+                        <button
+                            onClick={handleSaveEdit}
+                            className="text-accent-blue text-ios-body font-bold press-effect min-h-touch"
+                        >
+                            Save
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-4 pb-safe" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <label className={labelClass}>Container #</label>
+                                <input
+                                    type="text"
+                                    value={editForm.containerNumber || ''}
+                                    onChange={(e) => handleEditChange('containerNumber', e.target.value)}
+                                    placeholder="MSCU1234567"
+                                    maxLength={11}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={labelClass}>Booking/Ref #</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.bookingNumber || ''}
+                                        onChange={(e) => handleEditChange('bookingNumber', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Seal #</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.sealNumber || ''}
+                                        onChange={(e) => handleEditChange('sealNumber', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={labelClass}>Container Size</label>
+                                    <select
+                                        value={editForm.containerSize || '40ft'}
+                                        onChange={(e) => handleEditChange('containerSize', e.target.value)}
+                                        className={inputClass}
+                                    >
+                                        {CONTAINER_SIZES.map((s) => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Move Type</label>
+                                    <select
+                                        value={editForm.moveType || 'Import'}
+                                        onChange={(e) => handleEditChange('moveType', e.target.value)}
+                                        className={inputClass}
+                                    >
+                                        {MOVE_TYPES.map((m) => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Pickup Terminal</label>
+                                <select
+                                    value={editForm.pickupTerminal || ''}
+                                    onChange={(e) => handleEditChange('pickupTerminal', e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">Select Terminal</option>
+                                    {terminals.map((t, i) => (
+                                        <option key={i} value={t.name}>{t.name} - {t.address}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Pickup Appointment</label>
+                                <input
+                                    type="datetime-local"
+                                    value={editForm.pickupAppointment || ''}
+                                    onChange={(e) => handleEditChange('pickupAppointment', e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Delivery Address</label>
+                                <input
+                                    type="text"
+                                    value={editForm.deliveryAddress || ''}
+                                    onChange={(e) => handleEditChange('deliveryAddress', e.target.value)}
+                                    placeholder="123 Main St, City, IL"
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Delivery Appointment</label>
+                                <input
+                                    type="datetime-local"
+                                    value={editForm.deliveryAppointment || ''}
+                                    onChange={(e) => handleEditChange('deliveryAppointment', e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Customer / Broker</label>
+                                <input
+                                    type="text"
+                                    value={editForm.customerBroker || ''}
+                                    onChange={(e) => handleEditChange('customerBroker', e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Rate</label>
+                                <input
+                                    type="number"
+                                    value={editForm.rate || ''}
+                                    onChange={(e) => handleEditChange('rate', e.target.value)}
+                                    placeholder="$0.00"
+                                    min="0"
+                                    step="0.01"
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Picker - iOS Bottom Sheet */}
             {showStatusPicker && (
                 <div
                     className="fixed inset-0 bg-black/60 z-50 flex items-end animate-fade-in"
@@ -216,7 +420,6 @@ export default function LoadDetailScreen() {
             {/* Photo Viewer Modal */}
             {viewingPhoto && (
                 <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
-                    {/* Header - fixed at top */}
                     <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/90 backdrop-blur-sm" style={{ paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)' }}>
                         <button
                             onClick={() => setViewingPhoto(null)}
@@ -227,8 +430,6 @@ export default function LoadDetailScreen() {
                         <p className="text-white text-ios-headline font-semibold">{viewingPhoto.type}</p>
                         <div className="w-12" />
                     </div>
-
-                    {/* Scrollable Photo Area - scroll to see full image */}
                     <div className="flex-1 overflow-auto overscroll-contain">
                         <img
                             src={viewingPhoto.data}
@@ -236,8 +437,6 @@ export default function LoadDetailScreen() {
                             className="w-full h-auto"
                         />
                     </div>
-
-                    {/* Info Footer - fixed at bottom */}
                     <div className="shrink-0 px-4 py-3 bg-black/90 backdrop-blur-sm pb-safe">
                         <div className="flex items-center justify-between">
                             <div>
@@ -259,7 +458,12 @@ export default function LoadDetailScreen() {
             <div className="px-4 pt-4 space-y-4">
                 {/* Info Section */}
                 <div className="ios-card p-4">
-                    <p className="ios-section-header !px-0 !pt-0">Load Info</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="ios-section-header !px-0 !pt-0 !pb-0">Load Info</p>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${isPrepull ? 'move-prepull' : 'move-delivery'}`}>
+                            {isPrepull ? 'PREPULL' : 'DELIVERY'}
+                        </span>
+                    </div>
                     <div className="grid grid-cols-2 gap-3 text-ios-footnote">
                         <div>
                             <span className="text-text-tertiary text-ios-caption1">Move Type</span>
@@ -271,25 +475,25 @@ export default function LoadDetailScreen() {
                         </div>
                         <div>
                             <span className="text-text-tertiary text-ios-caption1">Booking #</span>
-                            <p className="font-medium">{load.bookingNumber || '—'}</p>
+                            <p className="font-medium">{load.bookingNumber || '-'}</p>
                         </div>
                         <div>
                             <span className="text-text-tertiary text-ios-caption1">Seal #</span>
-                            <p className="font-medium">{load.sealNumber || '—'}</p>
+                            <p className="font-medium">{load.sealNumber || '-'}</p>
                         </div>
                         <div className="col-span-2">
                             <span className="text-text-tertiary text-ios-caption1">Pickup</span>
-                            <p className="font-medium">{load.pickupTerminal || '—'}</p>
+                            <p className="font-medium">{load.pickupTerminal || '-'}</p>
                             {load.pickupAppointment && <p className="text-text-secondary text-ios-caption1">{formatDateTime(load.pickupAppointment)}</p>}
                         </div>
                         <div className="col-span-2">
-                            <span className="text-text-tertiary text-ios-caption1">Delivery</span>
-                            <p className="font-medium">{load.deliveryAddress || '—'}</p>
+                            <span className="text-text-tertiary text-ios-caption1">{isPrepull ? 'Drop Location' : 'Delivery'}</span>
+                            <p className="font-medium">{load.deliveryAddress || '-'}</p>
                             {load.deliveryAppointment && <p className="text-text-secondary text-ios-caption1">{formatDateTime(load.deliveryAppointment)}</p>}
                         </div>
                         <div>
                             <span className="text-text-tertiary text-ios-caption1">Customer</span>
-                            <p className="font-medium">{load.customerBroker || '—'}</p>
+                            <p className="font-medium">{load.customerBroker || '-'}</p>
                         </div>
                         {load.rate && (
                             <div>
@@ -339,13 +543,13 @@ export default function LoadDetailScreen() {
                                 onClick={() => cameraInputRef.current?.click()}
                                 className="flex-1 bg-accent-blue py-2.5 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect flex items-center justify-center gap-2"
                             >
-                                📸 Camera
+                                Camera
                             </button>
                             <button
                                 onClick={() => galleryInputRef.current?.click()}
                                 className="flex-1 bg-ios-elevated py-2.5 rounded-ios text-ios-footnote font-semibold min-h-touch press-effect flex items-center justify-center gap-2"
                             >
-                                🖼️ Gallery
+                                Gallery
                             </button>
                         </div>
                     </div>
@@ -378,7 +582,7 @@ export default function LoadDetailScreen() {
                                 </p>
                                 {activeDetention.gpsLat && (
                                     <p className="text-text-tertiary text-ios-caption2 mt-1">
-                                        📍 {activeDetention.gpsLat.toFixed(4)}, {activeDetention.gpsLng.toFixed(4)}
+                                        {activeDetention.gpsLat.toFixed(4)}, {activeDetention.gpsLng.toFixed(4)}
                                     </p>
                                 )}
                             </div>
@@ -386,7 +590,7 @@ export default function LoadDetailScreen() {
                                 onClick={handleDetentionStop}
                                 className="w-full bg-accent-red py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect"
                             >
-                                ⏹ Stop Detention
+                                Stop Detention
                             </button>
                         </div>
                     ) : (
@@ -394,7 +598,7 @@ export default function LoadDetailScreen() {
                             onClick={handleDetentionStart}
                             className="w-full bg-accent-orange text-black py-3 rounded-ios font-bold min-h-touch text-ios-body press-effect"
                         >
-                            ⏱️ Start Detention
+                            Start Detention
                         </button>
                     )}
 
@@ -403,7 +607,7 @@ export default function LoadDetailScreen() {
                             <p className="text-text-tertiary text-ios-caption1 mb-2">Previous Detention</p>
                             {detentions.filter(d => d.status === 'stopped').map((d) => (
                                 <div key={d.id} className="flex justify-between text-ios-footnote py-1">
-                                    <span className="text-text-secondary">{formatTime(d.startTime)} — {formatTime(d.endTime)}</span>
+                                    <span className="text-text-secondary">{formatTime(d.startTime)} - {formatTime(d.endTime)}</span>
                                     <span className="font-medium">{formatDuration(new Date(d.endTime) - new Date(d.startTime))}</span>
                                 </div>
                             ))}
@@ -473,7 +677,7 @@ export default function LoadDetailScreen() {
                 </div>
 
                 {/* Cost Section */}
-                <div className="ios-card p-4 mb-4">
+                <div className="ios-card p-4">
                     <p className="ios-section-header !px-0 !pt-0">Costs</p>
                     {receipts.length === 0 ? (
                         <p className="text-text-tertiary text-ios-footnote">No receipts attached</p>
@@ -514,7 +718,7 @@ export default function LoadDetailScreen() {
                                     <div className="text-right">
                                         <span className="text-text-tertiary text-ios-caption1">{formatDateTime(s.createdAt)}</span>
                                         {s.gpsLat && (
-                                            <p className="text-text-tertiary text-ios-caption2">📍 {s.gpsLat.toFixed(4)}, {s.gpsLng.toFixed(4)}</p>
+                                            <p className="text-text-tertiary text-ios-caption2">{s.gpsLat.toFixed(4)}, {s.gpsLng.toFixed(4)}</p>
                                         )}
                                     </div>
                                 </div>

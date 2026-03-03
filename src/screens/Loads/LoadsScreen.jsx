@@ -34,11 +34,15 @@ export default function LoadsScreen() {
     const moveTypeColors = {
         Import: 'bg-accent-blue/20 text-accent-blue',
         Export: 'bg-accent-green/20 text-accent-green',
+        'Import Prepull': 'bg-accent-purple/20 text-accent-purple',
+        'Export Prepull': 'bg-accent-purple/20 text-accent-purple',
         'Rail Dray': 'bg-accent-purple/20 text-accent-purple',
         'Street Turn': 'bg-accent-orange/20 text-accent-orange',
         Repo: 'bg-text-secondary/20 text-text-secondary',
         'Empty Return': 'bg-text-tertiary/20 text-text-tertiary',
     };
+
+    const isPrepull = (moveType) => moveType?.includes('Prepull');
 
     return (
         <div className="screen-scroll pb-safe">
@@ -92,10 +96,15 @@ export default function LoadsScreen() {
                                         <p className="text-ios-body font-semibold">
                                             {formatContainerNumber(load.containerNumber) || 'No Container #'}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                                             <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${moveTypeColors[load.moveType] || 'bg-text-tertiary/20 text-text-tertiary'}`}>
                                                 {load.moveType}
                                             </span>
+                                            {isPrepull(load.moveType) && (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold move-prepull">
+                                                    PREPULL
+                                                </span>
+                                            )}
                                             <span className="text-text-tertiary text-ios-caption1">{load.containerSize}</span>
                                         </div>
                                     </div>
