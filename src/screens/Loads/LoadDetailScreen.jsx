@@ -117,6 +117,16 @@ export default function LoadDetailScreen() {
         setEditForm(prev => ({ ...prev, [field]: value }));
     }
 
+    function handleEditDateTimeChange(baseField, part, value) {
+        setEditForm(prev => {
+            const current = prev[baseField] || '';
+            const [currentDate, currentTime] = current.split('T');
+            const newDate = part === 'date' ? value : (currentDate || '');
+            const newTime = part === 'time' ? value : (currentTime || '');
+            return { ...prev, [baseField]: newDate ? `${newDate}T${newTime || ''}` : '' };
+        });
+    }
+
     async function handleSaveEdit() {
         await updateLoad(id, {
             containerNumber: editForm.containerNumber,
@@ -305,12 +315,20 @@ export default function LoadDetailScreen() {
 
                             <div>
                                 <label className={labelClass}>Pickup Appointment</label>
-                                <input
-                                    type="datetime-local"
-                                    value={editForm.pickupAppointment || ''}
-                                    onChange={(e) => handleEditChange('pickupAppointment', e.target.value)}
-                                    className={inputClass}
-                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="date"
+                                        value={editForm.pickupAppointment?.split('T')[0] || ''}
+                                        onChange={(e) => handleEditDateTimeChange('pickupAppointment', 'date', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                    <input
+                                        type="time"
+                                        value={editForm.pickupAppointment?.split('T')[1] || ''}
+                                        onChange={(e) => handleEditDateTimeChange('pickupAppointment', 'time', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                </div>
                             </div>
 
                             <div>
@@ -326,12 +344,20 @@ export default function LoadDetailScreen() {
 
                             <div>
                                 <label className={labelClass}>Delivery Appointment</label>
-                                <input
-                                    type="datetime-local"
-                                    value={editForm.deliveryAppointment || ''}
-                                    onChange={(e) => handleEditChange('deliveryAppointment', e.target.value)}
-                                    className={inputClass}
-                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="date"
+                                        value={editForm.deliveryAppointment?.split('T')[0] || ''}
+                                        onChange={(e) => handleEditDateTimeChange('deliveryAppointment', 'date', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                    <input
+                                        type="time"
+                                        value={editForm.deliveryAppointment?.split('T')[1] || ''}
+                                        onChange={(e) => handleEditDateTimeChange('deliveryAppointment', 'time', e.target.value)}
+                                        className={inputClass}
+                                    />
+                                </div>
                             </div>
 
                             <div>

@@ -39,6 +39,16 @@ export default function AddLoadScreen() {
         setForm((prev) => ({ ...prev, [field]: value }));
     }
 
+    function handleDateTimeChange(baseField, part, value) {
+        setForm(prev => {
+            const current = prev[baseField] || '';
+            const [currentDate, currentTime] = current.split('T');
+            const newDate = part === 'date' ? value : (currentDate || '');
+            const newTime = part === 'time' ? value : (currentTime || '');
+            return { ...prev, [baseField]: newDate ? `${newDate}T${newTime || ''}` : '' };
+        });
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
         await createLoad(form);
@@ -129,7 +139,10 @@ export default function AddLoadScreen() {
 
                     <div>
                         <label className={labelClass}>Pickup Appointment</label>
-                        <input type="datetime-local" value={form.pickupAppointment} onChange={(e) => handleChange('pickupAppointment', e.target.value)} className={inputClass} />
+                        <div className="grid grid-cols-2 gap-2">
+                            <input type="date" value={form.pickupAppointment?.split('T')[0] || ''} onChange={(e) => handleDateTimeChange('pickupAppointment', 'date', e.target.value)} className={inputClass} />
+                            <input type="time" value={form.pickupAppointment?.split('T')[1] || ''} onChange={(e) => handleDateTimeChange('pickupAppointment', 'time', e.target.value)} className={inputClass} />
+                        </div>
                     </div>
 
                     <div>
@@ -139,7 +152,10 @@ export default function AddLoadScreen() {
 
                     <div>
                         <label className={labelClass}>{form.moveType.includes('Prepull') ? 'Drop Appointment' : 'Delivery Appointment'}</label>
-                        <input type="datetime-local" value={form.deliveryAppointment} onChange={(e) => handleChange('deliveryAppointment', e.target.value)} className={inputClass} />
+                        <div className="grid grid-cols-2 gap-2">
+                            <input type="date" value={form.deliveryAppointment?.split('T')[0] || ''} onChange={(e) => handleDateTimeChange('deliveryAppointment', 'date', e.target.value)} className={inputClass} />
+                            <input type="time" value={form.deliveryAppointment?.split('T')[1] || ''} onChange={(e) => handleDateTimeChange('deliveryAppointment', 'time', e.target.value)} className={inputClass} />
+                        </div>
                     </div>
 
                     <div>
