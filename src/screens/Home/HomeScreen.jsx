@@ -1,16 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllSettings, getSetting, setSetting } from '../../services/settingsService';
-import { getTodayEntries, isClockedIn, getLastClockIn, calculateDailyHours, getWeekEntries, getEntriesByDate, clockIn, clockOut } from '../../services/timeService';
+import { getTodayEntries, isClockedIn, getLastClockIn, calculateDailyHours, getWeekEntries, clockIn, clockOut } from '../../services/timeService';
 import { getLoadsByDate } from '../../services/loadService';
 import { getAllCredentials } from '../../services/credentialService';
 import { hasTodayPreTrip, getAllInspections } from '../../services/inspectionService';
 import { getActiveDetention } from '../../services/detentionService';
 import { formatTime, formatDate, formatDuration, getElapsedTime, daysUntil, expirationColor, getTodayStr } from '../../utils/formatters';
 import { DRIVER_STATUSES, WEEKLY_HOUR_LIMIT } from '../../utils/constants';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
+import { SkeletonCard, SkeletonList, RefreshSpinner } from '../../components/Skeleton';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 
 export default function HomeScreen() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [now, setNow] = useState(new Date());
     const [settings, setSettings] = useState({});
     const [driverStatus, setDriverStatus] = useState('Off Duty');
@@ -22,6 +27,7 @@ export default function HomeScreen() {
     const [detention, setDetention] = useState(null);
     const [recentInspections, setRecentInspections] = useState([]);
     const [recentShifts, setRecentShifts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
@@ -33,6 +39,7 @@ export default function HomeScreen() {
     }, []);
 
     async function loadData() {
+        setLoading(true);
         const s = await getAllSettings();
         setSettings(s);
         const status = await getSetting('driverStatus');
@@ -68,22 +75,30 @@ export default function HomeScreen() {
             return { date, entries, firstIn, lastOut, hours };
         });
         setRecentShifts(shiftDays);
+        setLoading(false);
     }
 
     const clockedIn = isClockedIn(todayEntries);
     const todayHoursMs = calculateDailyHours(todayEntries);
     const lastClockInTime = getLastClockIn(todayEntries);
 
+    const handleRefresh = useCallback(() => loadData(), []);
+    const { refreshing, pullHandlers } = usePullToRefresh(handleRefresh);
+
     async function handleClockToggle() {
+        haptic('medium');
         if (clockedIn) {
             await clockOut();
+            toast('Shift ended', 'info');
         } else {
             await clockIn();
+            toast('Clocked in', 'success');
         }
         await loadData();
     }
 
     async function handleStatusChange() {
+        haptic('light');
         const idx = DRIVER_STATUSES.indexOf(driverStatus);
         const next = DRIVER_STATUSES[(idx + 1) % DRIVER_STATUSES.length];
         setDriverStatus(next);
@@ -125,8 +140,23 @@ export default function HomeScreen() {
         'On Load': 'bg-accent-blue',
     };
 
+    if (loading) {
+        return (
+            <div className="screen-scroll px-4 pb-safe" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
+                <SkeletonCard className="mb-4" lines={3} />
+                <SkeletonCard className="mb-4" lines={2} />
+                <SkeletonList rows={3} className="mb-4" />
+            </div>
+        );
+    }
+
     return (
-        <div className="screen-scroll px-4 pt-6 pb-safe">
+        <div
+            className="screen-scroll px-4 pb-safe"
+            style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}
+            {...pullHandlers}
+        >
+            {refreshing && <RefreshSpinner />}
             {/* iOS Large Title Header */}
             <div className="flex items-start justify-between mb-6">
                 <div>

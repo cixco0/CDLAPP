@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { savePhoto, getTodayPhotos, deletePhoto } from '../../services/photoService';
 import { saveReceipt, getAllReceipts } from '../../services/receiptService';
@@ -6,10 +6,15 @@ import { getAllLoads } from '../../services/loadService';
 import { formatTime, formatContainerNumber, getTodayStr } from '../../utils/formatters';
 import { PHOTO_TYPES, RECEIPT_CATEGORIES, PAYMENT_METHODS } from '../../utils/constants';
 import { extractReceiptData } from '../../utils/receiptOCR';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
+import { RefreshSpinner } from '../../components/Skeleton';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 
 export default function CaptureScreen() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
     const [mode, setMode] = useState(searchParams.get('mode') || null);
@@ -35,6 +40,8 @@ export default function CaptureScreen() {
     const [ocrDone, setOcrDone] = useState(false);
     const [ocrText, setOcrText] = useState('');
     const [ocrData, setOcrData] = useState(null);
+
+    const { refreshing, pullHandlers } = usePullToRefresh(useCallback(() => loadData(), []));
 
     useEffect(() => { loadData(); }, []);
 
@@ -88,10 +95,13 @@ export default function CaptureScreen() {
 
     async function handleSavePhoto() {
         if (!capturedImage) return;
+        haptic('medium');
         try {
             await savePhoto({ data: capturedImage, type: photoType, loadId: photoLoadId || null, notes: photoNotes });
+            toast('Photo saved', 'success');
         } catch (err) {
-            alert(err?.name === 'StorageFullError' ? err.message : 'Could not save photo. Please try again.');
+            haptic('error');
+            toast(err?.name === 'StorageFullError' ? err.message : 'Could not save photo. Try again.', 'error');
             return;
         }
         resetForm();
@@ -100,6 +110,7 @@ export default function CaptureScreen() {
 
     async function handleSaveReceipt() {
         if (!capturedImage) return;
+        haptic('medium');
         try {
             await saveReceipt({
                 photo: capturedImage,
@@ -108,7 +119,6 @@ export default function CaptureScreen() {
                 loadId: receiptLoadId || null,
                 vendor: receiptVendor,
                 paymentMethod: receiptPayment,
-                // Pass all OCR-extracted data
                 gallons: ocrData?.gallons || 0,
                 pricePerGallon: ocrData?.pricePerGallon || 0,
                 fuelGrade: ocrData?.fuelGrade || '',
@@ -120,8 +130,10 @@ export default function CaptureScreen() {
                 receiptDate: ocrData?.date || '',
                 lineItems: ocrData?.allLineItems || [],
             });
+            toast('Receipt saved', 'success');
         } catch (err) {
-            alert(err?.name === 'StorageFullError' ? err.message : 'Could not save receipt. Please try again.');
+            haptic('error');
+            toast(err?.name === 'StorageFullError' ? err.message : 'Could not save receipt. Try again.', 'error');
             return;
         }
         resetForm();
@@ -155,7 +167,8 @@ export default function CaptureScreen() {
     const labelClass = "block text-text-secondary text-ios-footnote font-medium mb-1.5";
 
     return (
-        <div className="screen-scroll pb-safe">
+        <div className="screen-scroll pb-safe" {...pullHandlers}>
+            {refreshing && <RefreshSpinner />}
             <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
             <input ref={galleryInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
@@ -238,7 +251,7 @@ export default function CaptureScreen() {
                                             <div className="ios-card">
                                                 <div className="px-4 py-3">
                                                     <label className="text-text-tertiary text-ios-caption1">Amount ($)</label>
-                                                    <input type="number" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} placeholder="0.00" step="0.01" className="w-full bg-transparent text-ios-title3 font-bold outline-none mt-1 text-accent-green" />
+                                                    <input type="number" inputMode="decimal" value={receiptAmount} onChange={e => setReceiptAmount(e.target.value)} placeholder="0.00" step="0.01" className="w-full bg-transparent text-ios-title3 font-bold outline-none mt-1 text-accent-green" />
                                                 </div>
                                                 <div className="ios-separator" />
                                                 <div className="px-4 py-3">

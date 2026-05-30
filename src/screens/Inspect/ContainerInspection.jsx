@@ -4,9 +4,12 @@ import { createInspection } from '../../services/inspectionService';
 import { getAllSettings } from '../../services/settingsService';
 import { CONTAINER_INSPECTION_POSITIONS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/formatters';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
 
 export default function ContainerInspection() {
     const navigate = useNavigate();
+    const toast = useToast();
     const fileInputRef = useRef(null);
     const canvasRef = useRef(null);
     const [settings, setSettings] = useState({});
@@ -105,9 +108,9 @@ export default function ContainerInspection() {
     }
 
     async function handleSubmit() {
-        if (!overallCondition) { alert('Please select overall condition.'); return; }
-        if (!confirmed) { alert('Please confirm all positions have been inspected.'); return; }
-        if (!signature) { alert('Please provide your signature.'); return; }
+        if (!overallCondition) { haptic('error'); toast('Select overall condition', 'error'); return; }
+        if (!confirmed) { haptic('error'); toast('Confirm all positions have been inspected', 'error'); return; }
+        if (!signature) { haptic('error'); toast('Signature required', 'error'); return; }
 
         await createInspection({
             type: 'container',
@@ -122,6 +125,7 @@ export default function ContainerInspection() {
             driverName: settings.driverName || '',
             confirmed: true,
         });
+        haptic('success');
         setSubmitted(true);
     }
 

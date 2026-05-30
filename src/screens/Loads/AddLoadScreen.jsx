@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createLoad } from '../../services/loadService';
 import { getSetting } from '../../services/settingsService';
-import { CONTAINER_SIZES, MOVE_TYPES, CHASSIS_PROVIDERS } from '../../utils/constants';
+import { CONTAINER_SIZES, MOVE_TYPES } from '../../utils/constants';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
 
 export default function AddLoadScreen() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [terminals, setTerminals] = useState([]);
     const [form, setForm] = useState({
         containerNumber: '',
@@ -41,7 +44,9 @@ export default function AddLoadScreen() {
 
     async function handleSubmit(e) {
         e.preventDefault();
+        haptic('success');
         await createLoad(form);
+        toast('Load saved', 'success');
         navigate('/loads');
     }
 
@@ -149,7 +154,7 @@ export default function AddLoadScreen() {
 
                     <div>
                         <label className={labelClass}>Rate (optional)</label>
-                        <input type="number" value={form.rate} onChange={(e) => handleChange('rate', e.target.value)} placeholder="$0.00" min="0" step="0.01" className={inputClass} />
+                        <input type="number" inputMode="decimal" value={form.rate} onChange={(e) => handleChange('rate', e.target.value)} placeholder="$0.00" min="0" step="0.01" className={inputClass} />
                     </div>
 
                     <div>

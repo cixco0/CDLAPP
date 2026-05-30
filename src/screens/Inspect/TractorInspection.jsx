@@ -4,9 +4,12 @@ import { createInspection } from '../../services/inspectionService';
 import { getAllSettings } from '../../services/settingsService';
 import { TRACTOR_INSPECTION_ITEMS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/formatters';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
 
 export default function TractorInspection() {
     const navigate = useNavigate();
+    const toast = useToast();
     const canvasRef = useRef(null);
     const [settings, setSettings] = useState({});
     const [subType, setSubType] = useState('pre-trip');
@@ -94,19 +97,20 @@ export default function TractorInspection() {
     }
 
     async function handleSubmit() {
-        const hasUnresolvedDefects = items.some(
-            (i) => i.status === 'defect' && !i.description
-        );
+        const hasUnresolvedDefects = items.some((i) => i.status === 'defect' && !i.description);
         if (hasUnresolvedDefects) {
-            alert('Please describe all defects before submitting.');
+            haptic('error');
+            toast('Describe all defects before submitting', 'error');
             return;
         }
         if (!confirmed) {
-            alert('Please confirm all items have been inspected.');
+            haptic('error');
+            toast('Confirm all items have been inspected', 'error');
             return;
         }
         if (!signature) {
-            alert('Please provide your signature.');
+            haptic('error');
+            toast('Signature required', 'error');
             return;
         }
 
@@ -124,6 +128,7 @@ export default function TractorInspection() {
             confirmed: true,
         });
 
+        haptic('success');
         setSubmitted(true);
     }
 
@@ -187,6 +192,7 @@ export default function TractorInspection() {
                             <label className="text-text-secondary text-ios-footnote">Odometer</label>
                             <input
                                 type="number"
+                                inputMode="numeric"
                                 value={odometer}
                                 onChange={(e) => setOdometer(e.target.value)}
                                 placeholder="Enter miles"

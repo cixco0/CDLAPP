@@ -4,9 +4,12 @@ import { createInspection } from '../../services/inspectionService';
 import { getAllSettings } from '../../services/settingsService';
 import { CHASSIS_INSPECTION_ITEMS, CHASSIS_PROVIDERS } from '../../utils/constants';
 import { formatDateTime } from '../../utils/formatters';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
 
 export default function ChassisInspection() {
     const navigate = useNavigate();
+    const toast = useToast();
     const canvasRef = useRef(null);
     const [settings, setSettings] = useState({});
     const [chassisNumber, setChassisNumber] = useState('');
@@ -56,20 +59,20 @@ export default function ChassisInspection() {
     function clearSignature() { const c = canvasRef.current; if (c) { c.getContext('2d').clearRect(0, 0, c.width, c.height); setSignature(''); } }
 
     async function handleSubmit() {
-        if (!confirmed || !signature) {
-            alert('Please confirm inspection and provide signature.');
-            return;
-        }
+        if (!confirmed) { haptic('error'); toast('Confirm all items have been inspected', 'error'); return; }
+        if (!signature) { haptic('error'); toast('Signature required', 'error'); return; }
         await createInspection({
             type: 'chassis', chassisNumber, chassisProvider, iepDot,
             motorCarrierDot: settings.companyDot || '',
             items: items.map(({ id, label, status, description, severity }) => ({ id, label, status, description, severity })),
             signature, driverName: settings.driverName || '', confirmed: true, rejected,
         });
+        haptic('success');
         setSubmitted(true);
     }
 
     async function handleReject() {
+        haptic('medium');
         setRejected(true);
         await createInspection({
             type: 'chassis', chassisNumber, chassisProvider, iepDot,

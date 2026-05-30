@@ -7,10 +7,13 @@ import { startDetention, stopDetention, getDetentionByLoad } from '../../service
 import { getSetting } from '../../services/settingsService';
 import { formatContainerNumber, formatTime, formatDateTime, formatCurrency, formatDuration } from '../../utils/formatters';
 import { getStatusesForMoveType, CHASSIS_PROVIDERS, DOCUMENT_TYPES, CONTAINER_SIZES, MOVE_TYPES } from '../../utils/constants';
+import { useToast } from '../../components/Toast';
+import { haptic } from '../../utils/haptics';
 
 export default function LoadDetailScreen() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
     const [load, setLoad] = useState(null);
@@ -68,19 +71,25 @@ export default function LoadDetailScreen() {
     }, [activeDetention]);
 
     async function handleStatusAdvance(newStatus) {
+        haptic('medium');
         await advanceLoadStatus(id, newStatus);
         setShowStatusPicker(false);
+        toast(newStatus, 'success');
         await loadData();
     }
 
     async function handleDetentionStart() {
+        haptic('heavy');
         await startDetention(id, load.deliveryAddress || load.pickupTerminal || '');
+        toast('Detention started', 'warning');
         await loadData();
     }
 
     async function handleDetentionStop() {
         if (activeDetention) {
+            haptic('heavy');
             await stopDetention(activeDetention.id);
+            toast('Detention stopped', 'info');
             await loadData();
         }
     }
@@ -90,11 +99,14 @@ export default function LoadDetailScreen() {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = async (ev) => {
-            await savePhoto({
-                data: ev.target.result,
-                type: photoType,
-                loadId: id,
-            });
+            try {
+                await savePhoto({ data: ev.target.result, type: photoType, loadId: id });
+                haptic('success');
+                toast('Photo saved', 'success');
+            } catch (err) {
+                haptic('error');
+                toast(err?.name === 'StorageFullError' ? err.message : 'Could not save photo', 'error');
+            }
             await loadData();
         };
         reader.readAsDataURL(file);

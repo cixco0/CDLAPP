@@ -1,21 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllLoads } from '../../services/loadService';
-import { formatContainerNumber, formatTime, formatDate, getTodayStr } from '../../utils/formatters';
+import { formatContainerNumber, formatTime, getTodayStr } from '../../utils/formatters';
+import { SkeletonList, RefreshSpinner } from '../../components/Skeleton';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 
 export default function LoadsScreen() {
     const navigate = useNavigate();
     const [loads, setLoads] = useState([]);
     const [tab, setTab] = useState('today');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadAll();
     }, []);
 
     async function loadAll() {
+        setLoading(true);
         const all = await getAllLoads();
         setLoads(all.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        setLoading(false);
     }
+
+    const { refreshing, pullHandlers } = usePullToRefresh(useCallback(() => loadAll(), []));
 
     const today = getTodayStr();
     const filtered = loads.filter((l) => {
@@ -44,8 +51,20 @@ export default function LoadsScreen() {
 
     const isPrepull = (moveType) => moveType?.includes('Prepull');
 
+    if (loading) {
+        return (
+            <div className="screen-scroll pb-safe px-4 pt-6">
+                <div className="shimmer h-9 w-24 rounded mb-4" />
+                <div className="shimmer h-10 rounded-ios mb-4" />
+                <div className="shimmer h-12 rounded-ios mb-4" />
+                <SkeletonList rows={4} />
+            </div>
+        );
+    }
+
     return (
-        <div className="screen-scroll pb-safe">
+        <div className="screen-scroll pb-safe" {...pullHandlers}>
+            {refreshing && <RefreshSpinner />}
             {/* iOS Large Title */}
             <div className="px-4 pt-6 pb-2">
                 <h1 className="text-ios-large-title font-bold">Loads</h1>

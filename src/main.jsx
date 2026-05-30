@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
 import { initializeDefaults } from './services/settingsService';
 import { startAutoSync } from './services/syncService';
 
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <ErrorBoundary>
             <BrowserRouter>
-                <App />
+                <ToastProvider>
+                    <App />
+                </ToastProvider>
             </BrowserRouter>
         </ErrorBoundary>
     </React.StrictMode>
