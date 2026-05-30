@@ -1,13 +1,14 @@
 import db from '../db/db';
 import { v4 as uuidv4 } from 'uuid';
-import { captureGPS } from '../utils/gps';
+import { attachGPS } from '../utils/gps';
+import { guardedWrite } from '../db/writeGuard';
+import { compressImage } from '../utils/image';
 
 export async function saveReceipt(receiptData) {
-    const gps = await captureGPS();
     const now = new Date().toISOString();
     const receipt = {
         id: uuidv4(),
-        photo: receiptData.photo || '', // base64
+        photo: receiptData.photo ? await compressImage(receiptData.photo) : '', // compressed data URL
         category: receiptData.category || 'Other',
         amount: receiptData.amount || 0,
         loadId: receiptData.loadId || null,
@@ -28,9 +29,11 @@ export async function saveReceipt(receiptData) {
         createdAt: now,
         updatedAt: now,
         synced: false,
-        ...gps,
+        gpsLat: null,
+        gpsLng: null,
     };
-    await db.receipts.add(receipt);
+    await guardedWrite(() => db.receipts.add(receipt));
+    attachGPS((g) => db.receipts.update(receipt.id, { gpsLat: g.gpsLat, gpsLng: g.gpsLng }));
     return receipt;
 }
 
@@ -51,9 +54,11 @@ export async function deleteReceipt(id) {
 }
 
 export async function getReceiptsByMonth(year, month) {
-    const all = await db.receipts.toArray();
-    return all.filter((r) => {
-        const d = new Date(r.createdAt);
-        return d.getFullYear() === year && d.getMonth() === month;
-    });
+    // Range-query the indexed createdAt instead of scanning every receipt.
+    const start = new Date(year, month, 1).toISOString();
+    const end = new Date(year, month + 1, 1).toISOString();
+    return db.receipts
+        .where('createdAt')
+        .between(start, end, true, false)
+        .toArray();
 }

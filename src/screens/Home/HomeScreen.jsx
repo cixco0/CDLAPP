@@ -210,7 +210,7 @@ export default function HomeScreen() {
             {/* Today's Loads Card */}
             <div className="ios-card mb-4">
                 <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                    <h2 className="text-ios-headline">Today's Loads</h2>
+                    <h2 className="text-ios-headline">Today&apos;s Loads</h2>
                     <span className="text-text-tertiary text-ios-caption1">{todayLoads.length} loads</span>
                 </div>
 

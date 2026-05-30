@@ -1,5 +1,4 @@
 import Tesseract from 'tesseract.js';
-import { RECEIPT_CATEGORIES } from './constants';
 
 /**
  * Run OCR on an image and extract all possible receipt fields.
@@ -40,7 +39,7 @@ export async function extractReceiptData(imageDataUrl, onProgress) {
  * Find the total/amount — looks for the largest dollar amount,
  * or one near keywords like "total", "amount", "due", "balance"
  */
-function extractAmount(lines) {
+export function extractAmount(lines) {
     const moneyRegex = /\$?\s?(\d{1,6}[.,]\d{2})/g;
     let bestAmount = 0;
     let keywordAmount = null;
@@ -72,7 +71,7 @@ function extractAmount(lines) {
 /**
  * Extract subtotal separately
  */
-function extractSubtotal(lines) {
+export function extractSubtotal(lines) {
     for (const line of lines) {
         if (/subtotal|sub\s*total/i.test(line)) {
             const match = line.match(/\$?\s?(\d{1,6}[.,]\d{2})/);
@@ -85,7 +84,7 @@ function extractSubtotal(lines) {
 /**
  * Extract tax amount
  */
-function extractTax(lines) {
+export function extractTax(lines) {
     for (const line of lines) {
         if (/\btax\b/i.test(line) && !/before|pre|excl/i.test(line)) {
             const match = line.match(/\$?\s?(\d{1,6}[.,]\d{2})/);
@@ -98,7 +97,7 @@ function extractTax(lines) {
 /**
  * The vendor/store name is usually in the first 3-5 lines of the receipt
  */
-function extractVendor(lines) {
+export function extractVendor(lines) {
     for (let i = 0; i < Math.min(lines.length, 5); i++) {
         const line = lines[i];
         if (line.length < 3) continue;
@@ -112,7 +111,7 @@ function extractVendor(lines) {
 /**
  * Guess the receipt category from text content
  */
-function guessCategory(text) {
+export function guessCategory(text) {
     const lower = text.toLowerCase();
     const patterns = [
         { category: 'Fuel', keywords: ['fuel', 'gas', 'diesel', 'pump', 'gallon', 'gal', 'unleaded', 'petro', 'shell', 'bp', 'pilot', 'loves', 'ta ', 'flying j', 'speedway', 'circle k', 'cef', 'def', 'ppg', 'price/gal'] },
@@ -131,9 +130,9 @@ function guessCategory(text) {
 /**
  * Extract date from receipt
  */
-function extractDate(text) {
+export function extractDate(text) {
     const patterns = [
-        /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/, // MM/DD/YYYY or MM-DD-YYYY
+        /(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/, // MM/DD/YYYY or MM-DD-YYYY
         /(\w{3,9})\s+(\d{1,2}),?\s+(\d{4})/, // January 15, 2024
     ];
     for (const p of patterns) {
@@ -146,7 +145,7 @@ function extractDate(text) {
 /**
  * Extract time from receipt
  */
-function extractTime(text) {
+export function extractTime(text) {
     const match = text.match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)/);
     return match ? match[1] : '';
 }
@@ -154,11 +153,11 @@ function extractTime(text) {
 /**
  * Extract invoice/transaction/receipt number
  */
-function extractInvoiceNumber(lines) {
+export function extractInvoiceNumber(lines) {
     const patterns = [
-        /(?:invoice|inv|receipt|trans(?:action)?|ref(?:erence)?|ticket|order|confirmation|auth|approval)\s*[#:.\-\s]*\s*([A-Z0-9\-]{3,20})/i,
-        /#\s*([A-Z0-9\-]{4,20})/i,
-        /(?:no|num|number)\s*[.:]\s*([A-Z0-9\-]{3,20})/i,
+        /(?:invoice|inv|receipt|trans(?:action)?|ref(?:erence)?|ticket|order|confirmation|auth|approval)\s*[#:.\s-]*\s*([A-Z0-9-]{3,20})/i,
+        /#\s*([A-Z0-9-]{4,20})/i,
+        /(?:no|num|number)\s*[.:]\s*([A-Z0-9-]{3,20})/i,
     ];
     for (const line of lines) {
         for (const pattern of patterns) {
@@ -172,7 +171,7 @@ function extractInvoiceNumber(lines) {
 /**
  * Extract gallons (fuel receipts)
  */
-function extractGallons(lines) {
+export function extractGallons(lines) {
     for (const line of lines) {
         const lower = line.toLowerCase();
         if (/gal|gallon|volume|qty/i.test(lower)) {
@@ -189,7 +188,7 @@ function extractGallons(lines) {
 /**
  * Extract price per gallon
  */
-function extractPricePerGallon(lines) {
+export function extractPricePerGallon(lines) {
     for (const line of lines) {
         if (/price\s*\/?\s*gal|ppg|\$\s*\/\s*gal|per\s*gal|rate/i.test(line)) {
             const match = line.match(/(\d{1,2}[.,]\d{2,4})/);
@@ -202,7 +201,7 @@ function extractPricePerGallon(lines) {
 /**
  * Extract fuel grade/type
  */
-function extractFuelGrade(lines) {
+export function extractFuelGrade(lines) {
     const grades = ['diesel', 'unleaded', 'premium', 'regular', 'mid-grade', 'midgrade', 'super', 'def', 'e85', 'ultra low sulfur'];
     for (const line of lines) {
         const lower = line.toLowerCase();
@@ -218,7 +217,7 @@ function extractFuelGrade(lines) {
 /**
  * Extract last 4 of card number
  */
-function extractCardLastFour(text) {
+export function extractCardLastFour(text) {
     const match = text.match(/(?:card|visa|mc|mastercard|amex|discover|debit|credit)\s*[#:.*x\s]*(\d{4})/i)
         || text.match(/\*{4,}\s*(\d{4})/);
     return match ? match[1] : '';
@@ -227,7 +226,7 @@ function extractCardLastFour(text) {
 /**
  * Extract phone number
  */
-function extractPhoneNumber(text) {
+export function extractPhoneNumber(text) {
     const match = text.match(/\(?\d{3}\)?\s*[-.]?\s*\d{3}\s*[-.]?\s*\d{4}/);
     return match ? match[0] : '';
 }
@@ -235,7 +234,7 @@ function extractPhoneNumber(text) {
 /**
  * Extract address — typically the line after the vendor name
  */
-function extractAddress(lines) {
+export function extractAddress(lines) {
     for (let i = 1; i < Math.min(lines.length, 6); i++) {
         const line = lines[i];
         // Address-like: contains a number followed by text, or city+state
@@ -252,7 +251,7 @@ function extractAddress(lines) {
 /**
  * Extract individual line items (item + price pairs)
  */
-function extractLineItems(lines) {
+export function extractLineItems(lines) {
     const items = [];
     const priceRegex = /\$?\s?(\d{1,6}[.,]\d{2})\s*$/;
     for (const line of lines) {

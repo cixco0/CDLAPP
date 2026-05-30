@@ -109,7 +109,7 @@ export default function AddLoadScreen() {
                         <div className="bg-accent-purple/10 rounded-ios p-3 border border-accent-purple/30">
                             <p className="text-accent-purple text-ios-footnote font-semibold">Prepull Selected</p>
                             <p className="text-text-secondary text-ios-caption1 mt-1">
-                                This is a prepull - you'll pick up the container and drop it at a yard location, not deliver to final destination.
+                                This is a prepull - you&apos;ll pick up the container and drop it at a yard location, not deliver to final destination.
                             </p>
                         </div>
                     )}

@@ -1,11 +1,10 @@
 import db from '../db/db';
 import { v4 as uuidv4 } from 'uuid';
-import { captureGPS } from '../utils/gps';
-
-// TODO: Supabase sync — replace IndexedDB calls with Supabase client
+import { attachGPS } from '../utils/gps';
+import { guardedWrite } from '../db/writeGuard';
+import { isValidStatusForMoveType } from '../utils/constants';
 
 export async function createLoad(loadData) {
-    const gps = await captureGPS();
     const now = new Date().toISOString();
     const load = {
         id: uuidv4(),
@@ -31,9 +30,12 @@ export async function createLoad(loadData) {
         createdAt: now,
         updatedAt: now,
         synced: false,
-        ...gps,
+        gpsLat: null,
+        gpsLng: null,
     };
-    await db.loads.add(load);
+    await guardedWrite(() => db.loads.add(load));
+    // Location is best-effort — patch it in once a fix arrives, don't block.
+    attachGPS((g) => db.loads.update(load.id, { gpsLat: g.gpsLat, gpsLng: g.gpsLng }));
     return load;
 }
 
@@ -63,19 +65,34 @@ export async function getLoadsByStatus(status) {
 }
 
 export async function advanceLoadStatus(id, newStatus) {
-    const gps = await captureGPS();
+    const load = await db.loads.get(id);
+    if (!load) throw new Error(`Load ${id} not found`);
+    // Guard the lifecycle: only allow statuses that exist in this move type's flow.
+    if (!isValidStatusForMoveType(load.moveType, newStatus)) {
+        throw new Error(
+            `Invalid status "${newStatus}" for move type "${load.moveType}"`
+        );
+    }
+
     const now = new Date().toISOString();
-    await db.loads.update(id, { status: newStatus, updatedAt: now });
+    const changeId = uuidv4();
+    await guardedWrite(() => db.loads.update(id, { status: newStatus, updatedAt: now }));
     // Record status change for audit trail
-    await db.statusChanges.add({
-        id: uuidv4(),
-        loadId: id,
-        status: newStatus,
-        createdAt: now,
-        updatedAt: now,
-        synced: false,
-        ...gps,
-    });
+    await guardedWrite(() =>
+        db.statusChanges.add({
+            id: changeId,
+            loadId: id,
+            status: newStatus,
+            createdAt: now,
+            updatedAt: now,
+            synced: false,
+            gpsLat: null,
+            gpsLng: null,
+        })
+    );
+    attachGPS((g) =>
+        db.statusChanges.update(changeId, { gpsLat: g.gpsLat, gpsLng: g.gpsLng })
+    );
 }
 
 export async function getStatusChanges(loadId) {

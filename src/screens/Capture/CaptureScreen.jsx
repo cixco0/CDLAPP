@@ -88,32 +88,42 @@ export default function CaptureScreen() {
 
     async function handleSavePhoto() {
         if (!capturedImage) return;
-        await savePhoto({ data: capturedImage, type: photoType, loadId: photoLoadId || null, notes: photoNotes });
+        try {
+            await savePhoto({ data: capturedImage, type: photoType, loadId: photoLoadId || null, notes: photoNotes });
+        } catch (err) {
+            alert(err?.name === 'StorageFullError' ? err.message : 'Could not save photo. Please try again.');
+            return;
+        }
         resetForm();
         await loadData();
     }
 
     async function handleSaveReceipt() {
         if (!capturedImage) return;
-        await saveReceipt({
-            photo: capturedImage,
-            category: receiptCategory,
-            amount: Number(receiptAmount) || 0,
-            loadId: receiptLoadId || null,
-            vendor: receiptVendor,
-            paymentMethod: receiptPayment,
-            // Pass all OCR-extracted data
-            gallons: ocrData?.gallons || 0,
-            pricePerGallon: ocrData?.pricePerGallon || 0,
-            fuelGrade: ocrData?.fuelGrade || '',
-            invoiceNumber: ocrData?.invoiceNumber || '',
-            subtotal: ocrData?.subtotal || 0,
-            tax: ocrData?.tax || 0,
-            cardLastFour: ocrData?.cardLastFour || '',
-            address: ocrData?.address || '',
-            receiptDate: ocrData?.date || '',
-            lineItems: ocrData?.allLineItems || [],
-        });
+        try {
+            await saveReceipt({
+                photo: capturedImage,
+                category: receiptCategory,
+                amount: Number(receiptAmount) || 0,
+                loadId: receiptLoadId || null,
+                vendor: receiptVendor,
+                paymentMethod: receiptPayment,
+                // Pass all OCR-extracted data
+                gallons: ocrData?.gallons || 0,
+                pricePerGallon: ocrData?.pricePerGallon || 0,
+                fuelGrade: ocrData?.fuelGrade || '',
+                invoiceNumber: ocrData?.invoiceNumber || '',
+                subtotal: ocrData?.subtotal || 0,
+                tax: ocrData?.tax || 0,
+                cardLastFour: ocrData?.cardLastFour || '',
+                address: ocrData?.address || '',
+                receiptDate: ocrData?.date || '',
+                lineItems: ocrData?.allLineItems || [],
+            });
+        } catch (err) {
+            alert(err?.name === 'StorageFullError' ? err.message : 'Could not save receipt. Please try again.');
+            return;
+        }
         resetForm();
         await loadData();
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { getActiveDetention } from '../services/detentionService';
 import { hasTodayPreTrip } from '../services/inspectionService';
 import { getElapsedTime, getTodayStr } from '../utils/formatters';
@@ -41,23 +42,15 @@ const icons = {
 
 export default function Layout({ children }) {
     const location = useLocation();
-    const [detention, setDetention] = useState(null);
-    const [hasPreTrip, setHasPreTrip] = useState(true);
     const [detentionTime, setDetentionTime] = useState('');
 
-    useEffect(() => {
-        const check = async () => {
-            const active = await getActiveDetention();
-            setDetention(active);
-            const preTrip = await hasTodayPreTrip(getTodayStr());
-            setHasPreTrip(preTrip);
-        };
-        check();
-        const interval = setInterval(check, 10000);
-        return () => clearInterval(interval);
-    }, [location]);
+    // Reactive queries: update the instant detention/inspection data changes,
+    // instead of polling every 10s. undefined while loading — default hasPreTrip
+    // to true so the warning bar doesn't flash before the query resolves.
+    const detention = useLiveQuery(() => getActiveDetention(), [], null);
+    const hasPreTrip = useLiveQuery(() => hasTodayPreTrip(getTodayStr()), [], true);
 
-    // Update detention timer every second
+    // Tick the detention timer display every second
     useEffect(() => {
         if (!detention) return;
         const update = () => setDetentionTime(getElapsedTime(detention.startTime));

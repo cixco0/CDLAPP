@@ -1,10 +1,18 @@
 import db from '../db/db';
 import { v4 as uuidv4 } from 'uuid';
-import { captureGPS } from '../utils/gps';
+import { attachGPS } from '../utils/gps';
+import { guardedWrite } from '../db/writeGuard';
+import { compressImage } from '../utils/image';
 
 export async function createInspection(inspectionData) {
-    const gps = await captureGPS();
     const now = new Date().toISOString();
+    // Inspection photos + signature are base64 — compress before storing.
+    const photos = await Promise.all(
+        (inspectionData.photos || []).map((p) => compressImage(p))
+    );
+    const signature = inspectionData.signature
+        ? await compressImage(inspectionData.signature)
+        : '';
     const inspection = {
         id: uuidv4(),
         type: inspectionData.type, // 'tractor' | 'chassis' | 'container'
@@ -18,19 +26,23 @@ export async function createInspection(inspectionData) {
         iepDot: inspectionData.iepDot || '',
         items: inspectionData.items || [],
         overallCondition: inspectionData.overallCondition || '',
-        signature: inspectionData.signature || '',
+        signature,
         driverName: inspectionData.driverName || '',
         motorCarrierDot: inspectionData.motorCarrierDot || '',
-        photos: inspectionData.photos || [],
+        photos,
         confirmed: inspectionData.confirmed || false,
         rejected: inspectionData.rejected || false,
         rejectionReason: inspectionData.rejectionReason || '',
         createdAt: now,
         updatedAt: now,
         synced: false,
-        ...gps,
+        gpsLat: null,
+        gpsLng: null,
     };
-    await db.inspections.add(inspection);
+    await guardedWrite(() => db.inspections.add(inspection));
+    attachGPS((g) =>
+        db.inspections.update(inspection.id, { gpsLat: g.gpsLat, gpsLng: g.gpsLng })
+    );
     return inspection;
 }
 

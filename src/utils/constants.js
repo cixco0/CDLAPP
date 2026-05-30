@@ -109,6 +109,15 @@ export function getStatusesForMoveType(moveType) {
     return LOAD_STATUS_FLOWS[moveType] || LOAD_STATUS_FLOWS['Import'];
 }
 
+/**
+ * Whether `status` is a valid status for the given move type's flow.
+ * Guards advanceLoadStatus against typos/mis-wired buttons silently
+ * corrupting the load lifecycle and audit trail.
+ */
+export function isValidStatusForMoveType(moveType, status) {
+    return getStatusesForMoveType(moveType).includes(status);
+}
+
 // Backwards-compatible flat list (union of all unique statuses)
 export const LOAD_STATUSES = [...new Set(Object.values(LOAD_STATUS_FLOWS).flat())];
 
