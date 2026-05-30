@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,16 +6,24 @@ on:
       - main
       - master
       - claude/elegant-planck-MyJAs
-
-  # Also allow triggering manually from the GitHub Actions tab
+  # Allow manual runs from the Actions tab
   workflow_dispatch:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+# Permissions the built-in GITHUB_TOKEN needs to publish Pages.
+# No external accounts or repository secrets required.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
+# Only one deploy at a time; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,9 +40,32 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Deploy to Vercel
-        run: npx vercel --prod --yes --token "$VERCEL_TOKEN"
+      # Turns on GitHub Pages for this repo automatically on the first run,
+      # so there is no manual setting to flip.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Build
+        run: npm run build
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Project sites are served from /<repo>/. Must match the repo name.
+          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
