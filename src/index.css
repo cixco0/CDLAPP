@@ -58,6 +58,13 @@ textarea {
   font-size: 16px !important;
 }
 
+/* Dark color scheme for native date/time pickers */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
 /* ─── iOS Frosted Glass ─── */
 .glass-bar {
   background: rgba(28, 28, 30, 0.72);
